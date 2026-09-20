@@ -1,0 +1,35 @@
+name: Build Lunar Engine (Windows)
+
+# Run manually from the "Actions" tab (click "Run workflow"), or automatically
+# on every push to main.
+#
+# This uses electron-packager instead of electron-builder: it just bundles
+# your app with a copy of Electron and hands back a folder containing a real
+# LunarEngine.exe. No installer step, no code-signing checks, no publish
+# step — those were the parts breaking before. You get a portable app folder
+# instead of a one-click installer, which is a fine trade for "give me a
+# working .exe."
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - run: npm install
+
+      - run: npm run package:win
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: LunarEngine-windows
+          path: dist/LunarEngine-win32-x64/**
+          if-no-files-found: error
