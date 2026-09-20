@@ -1,0 +1,47 @@
+name: Build Lunar Engine Installers
+
+# Run this from the "Actions" tab on GitHub (workflow_dispatch = manual "Run workflow"
+# button), or automatically whenever you push to main. No local Windows/Mac machine
+# needed — GitHub's own Windows/Mac/Linux runners build the real installers for you.
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        include:
+          - os: windows-latest
+            script: dist:win
+            artifact: windows-installer
+            glob: dist/*.exe
+          - os: macos-latest
+            script: dist:mac
+            artifact: mac-installer
+            glob: dist/*.dmg
+          - os: ubuntu-latest
+            script: dist:linux
+            artifact: linux-installQer
+            glob: dist/*.AppImage
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Build installer
+        run: npm run ${{ matrix.script }}
+
+      - name: Upload installer
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact }}
+          path: ${{ matrix.glob }}
+          if-no-files-found: error
