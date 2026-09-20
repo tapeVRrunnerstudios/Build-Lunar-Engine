@@ -17,6 +17,11 @@ on:
 jobs:
   windows:
     runs-on: windows-latest
+    defaults:
+      run:
+        # package.json lives in electron-app/, not the repo root — every
+        # `run:` step below executes inside that folder.
+        working-directory: electron-app
     steps:
       - uses: actions/checkout@v4
 
@@ -31,5 +36,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: LunarEngine-windows
-          path: dist/LunarEngine-win32-x64/**
+          # this path is NOT affected by working-directory (that only applies
+          # to `run:` steps), so it needs the electron-app/ prefix spelled out
+          path: electron-app/dist/LunarEngine-win32-x64/**
           if-no-files-found: error
