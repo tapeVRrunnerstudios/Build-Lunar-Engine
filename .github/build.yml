@@ -1,0 +1,62 @@
+name: Build Lunar Engine Installers
+
+# Run manually from the "Actions" tab (click "Run workflow"), or automatically
+# on every push to main. Three independent jobs, one per OS — if one fails,
+# the others still run to completion so you can see all three results at once.
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm install
+      - run: npm run dist:win
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows-installer
+          path: dist/*.exe
+          if-no-files-found: error
+
+  mac:
+    runs-on: macos-latest
+    env:
+      # Without this, electron-builder tries to find a code-signing identity
+      # in the CI keychain and errors out since there isn't one.
+      CSC_IDENTITY_AUTO_DISCOVERY: "false"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm install
+      - run: npm run dist:mac
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mac-installer
+          path: dist/*.dmg
+          if-no-files-found: error
+
+  linux:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      # AppImage packaging needs libfuse2 at build time; newer Ubuntu runner
+      # images (22.04+) no longer include it by default.
+      - run: sudo apt-get update && sudo apt-get install -y libfuse2
+      - run: npm install
+      - run: npm run dist:linux
+      - uses: actions/upload-artifact@v4
+        with:
+          name: linux-installer
+          path: dist/*.AppImage
+          if-no-files-found: error
