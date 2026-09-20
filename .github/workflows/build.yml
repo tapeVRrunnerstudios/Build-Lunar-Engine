@@ -11,6 +11,7 @@ on:
 jobs:
   build:
     strategy:
+      fail-fast: false
       matrix:
         include:
           - os: windows-latest
@@ -23,7 +24,7 @@ jobs:
             glob: dist/*.dmg
           - os: ubuntu-latest
             script: dist:linux
-            artifact: linux-installQer
+            artifact: linux-installer
             glob: dist/*.AppImage
     runs-on: ${{ matrix.os }}
     steps:
@@ -31,7 +32,13 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
+
+      # AppImage packaging needs libfuse2 to run its build-time tooling.
+      # Recent Ubuntu runner images (22.04+) no longer include it by default.
+      - name: Install libfuse2 (Linux AppImage build dependency)
+        if: matrix.os == 'ubuntu-latest'
+        run: sudo apt-get update && sudo apt-get install -y libfuse2
 
       - name: Install dependencies
         run: npm install
