@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Lunar Engine</title>
+<style>
+*{box-sizing:border-box}html,body{margin:0;height:100%;background:#101218;color:#e9eaf0;font:14px Segoe UI,Arial,sans-serif;overflow:hidden}
+button{font:inherit;background:#202530;color:#eee;border:1px solid #363c49;border-radius:6px;padding:9px 14px;cursor:pointer}button:hover{background:#2a303c}button.active{background:#5c4ee5;border-color:#5c4ee5}
+.app{height:100%;display:grid;grid-template-rows:auto 1fr}
+header{display:flex;align-items:center;gap:12px;padding:18px 24px;border-bottom:1px solid #262b35}
+.logo{font-size:20px;font-weight:700;color:#b9adff}
+.grow{flex:1}
+main{overflow:auto;padding:24px}
+.empty{text-align:center;color:#858c99;padding:80px 20px}
+.empty .big{font-size:40px;margin-bottom:14px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:14px}
+.card{background:#171a20;border:1px solid #262b35;border-radius:10px;padding:16px;cursor:pointer;position:relative}
+.card:hover{border-color:#5c4ee5;background:#1b1f28}
+.card .badge{display:inline-block;font-size:10px;text-transform:uppercase;letter-spacing:.03em;padding:2px 7px;border-radius:10px;background:#2a2560;color:#c9c1ff;margin-bottom:8px}
+.card .badge.bp{background:#1f3a2b;color:#8fe0ac}
+.card h3{margin:0 0 4px;font-size:15px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.card .path{font-size:11px;color:#6b7280;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.card .time{font-size:11px;color:#858c99;margin-top:10px}
+.card .x{position:absolute;top:8px;right:8px;background:transparent;border:none;color:#6b7280;font-size:16px;padding:2px 6px;border-radius:4px}
+.card .x:hover{background:#2a303c;color:#eee}
+.modal{position:fixed;inset:0;background:#0009;display:flex;align-items:center;justify-content:center;z-index:10}
+.box{width:min(560px,90vw);background:#1b1f27;border:1px solid #454b58;border-radius:10px;padding:20px}
+.box h2{margin:0 0 6px}
+.hint{font-size:12px;color:#858c99;line-height:1.5;margin-bottom:6px}
+input[type=text]{width:100%;padding:10px;background:#12151a;color:#eee;border:1px solid #363c49;border-radius:6px;margin:10px 0;font-size:14px}
+.langChoice{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:14px 0}
+.langCard{border:1px solid #363c49;border-radius:8px;padding:14px;cursor:pointer;background:#12151a}
+.langCard:hover{background:#1b1f27}.langCard.picked{border-color:#8f7dff;background:#211c3a}
+.langCard b{display:block;font-size:14px;margin-bottom:4px;color:#c9c1ff}.langCard span{font-size:11px;color:#9299a8;line-height:1.5}
+.actions{text-align:right;margin-top:8px}
+.actions button+button{margin-left:8px}
+</style>
+</head>
+<body>
+<div class="app">
+<header>
+  <div class="logo">☾ Lunar Engine</div>
+  <div class="grow"></div>
+  <button id="importBtn">Import Project</button>
+  <button id="folderBtn">Open Projects Folder</button>
+  <button id="newBtn" class="active">＋ New Project</button>
+</header>
+<main>
+  <div id="content"></div>
+</main>
+</div>
+<div id="modal"></div>
+<script>
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+function timeAgo(ts) {
+  const s = Math.floor((Date.now() - ts) / 1000);
+  if (s < 60) return "just now";
+  if (s < 3600) return Math.floor(s / 60) + "m ago";
+  if (s < 86400) return Math.floor(s / 3600) + "h ago";
+  return Math.floor(s / 86400) + "d ago";
+}
+function closeModal() { document.getElementById("modal").innerHTML = ""; }
+
+async function render() {
+  const projects = await window.lunarDesktop.listProjects();
+  const content = document.getElementById("content");
+  if (!projects.length) {
+    content.innerHTML = `<div class="empty"><div class="big">☾</div><div>No projects yet.</div><div class="hint">Click "＋ New Project" to create your first Lunar Engine game.</div></div>`;
+    return;
+  }
+  content.innerHTML = `<div class="grid">${projects.map(p => `
+    <div class="card" data-path="${esc(p.path)}">
+      <button class="x" data-remove="${esc(p.path)}" title="Remove from list">✕</button>
+      <span class="badge ${p.language === "blueprint" ? "bp" : ""}">${p.language === "blueprint" ? "Blueprints" : "LunarScript"}</span>
+      <h3>${esc(p.name)}</h3>
+      <div class="path">${esc(p.path)}</div>
+      <div class="time">Opened ${timeAgo(p.updatedAt)}</div>
+    </div>`).join("")}</div>`;
+  content.querySelectorAll(".card").forEach(card => card.addEventListener("click", (e) => {
+    if (e.target.closest("[data-remove]")) return;
+    window.lunarDesktop.openProject(card.dataset.path);
+  }));
+  content.querySelectorAll("[data-remove]").forEach(btn => btn.addEventListener("click", async (e) => {
+    e.stopPropagation();
+    await window.lunarDesktop.removeProject(btn.dataset.remove);
+    render();
+  }));
+}
+
+function openNewProjectModal() {
+  document.getElementById("modal").innerHTML = `<div class="modal"><div class="box">
+    <h2>Create New Project</h2>
+    <div class="hint">Choose the name and how you'll script this game. You can still mix both later per-object.</div>
+    <input id="nameInput" type="text" value="My Lunar Game" maxlength="80" autofocus>
+    <div class="langChoice">
+      <div class="langCard picked" data-lang="lunarscript"><b>LunarScript</b><span>Real code — variables, functions, if/while/for, on start / on update / on collision. Fast once you know it.</span></div>
+      <div class="langCard" data-lang="blueprint"><b>Blueprints</b><span>Visual node graphs — wire Events, Actions and Logic together. No typing required.</span></div>
+    </div>
+    <div class="actions"><button id="cancelBtn">Cancel</button><button id="createBtn" class="active">Create Project</button></div>
+  </div></div>`;
+  let picked = "lunarscript";
+  document.querySelectorAll(".langCard").forEach(card => card.onclick = () => { picked = card.dataset.lang; document.querySelectorAll(".langCard").forEach(c => c.classList.toggle("picked", c === card)); });
+  document.getElementById("cancelBtn").onclick = closeModal;
+  const nameInput = document.getElementById("nameInput");
+  nameInput.select();
+  nameInput.onkeydown = e => { if (e.key === "Enter") document.getElementById("createBtn").click(); };
+  document.getElementById("createBtn").onclick = async () => {
+    const name = nameInput.value.trim() || "My Lunar Game";
+    closeModal();
+    await window.lunarDesktop.createProject(name, picked);
+    render();
+  };
+}
+
+document.getElementById("newBtn").onclick = openNewProjectModal;
+document.getElementById("importBtn").onclick = async () => { const r = await window.lunarDesktop.importProject(); if (r.ok) render(); };
+document.getElementById("folderBtn").onclick = () => window.lunarDesktop.openProjectsFolder();
+
+render();
+</script>
+</body>
+</html>

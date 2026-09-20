@@ -1,0 +1,1830 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Lunar Engine Web Editor</title>
+<style>
+*{box-sizing:border-box}html,body{margin:0;height:100%;overflow:hidden;background:#101218;color:#e9eaf0;font:13px Segoe UI,Arial,sans-serif}
+button,input,select,textarea{font:inherit}button{background:#202530;color:#eee;border:1px solid #363c49;border-radius:5px;padding:6px 9px;cursor:pointer}button:hover{background:#2a303c}
+.app{height:100%;display:grid;grid-template-rows:42px 1fr 24px}.bar{display:flex;align-items:center;gap:5px;padding:5px 8px;background:#191c23;border-bottom:1px solid #303540}.logo{font-weight:700;color:#b9adff;font-size:16px;margin-right:12px}.grow{flex:1}.active{background:#5c4ee5!important}.play{background:#277648!important}
+.main{display:grid;grid-template-columns:215px 1fr 300px;min-height:0}.side{background:#171a20;min-width:0}.left{border-right:1px solid #303540}.right{border-left:1px solid #303540}
+.title{height:32px;padding:8px 10px;background:#1e222a;border-bottom:1px solid #303540;font-weight:700;font-size:11px;text-transform:uppercase}.body{height:calc(100% - 32px);overflow:auto;padding:7px}
+.center{display:grid;grid-template-rows:1fr 180px;min-width:0;background:#0d0f14}.viewport{position:relative;min-height:0;overflow:hidden}.viewport canvas{width:100%;height:100%;display:block}.tabs{position:absolute;z-index:2;top:7px;left:7px}
+.bottom{display:grid;grid-template-columns:1fr 1fr;border-top:1px solid #303540;min-height:0}.console{border-right:1px solid #303540}.log{height:calc(100% - 32px);overflow:auto;padding:7px;font:11px Consolas,monospace;line-height:1.5}.info{color:#9eb8ff}.warn{color:#e5bb6a}.err{color:#ef7777}
+.item{padding:6px 8px;border-radius:4px;cursor:pointer}.item:hover{background:#242933}.selected{background:#39306c}.indent{padding-left:18px}
+.section{border:1px solid #303540;border-radius:5px;overflow:hidden;margin-bottom:8px}.head{background:#20242c;padding:7px 8px;font-weight:700;font-size:11px;display:flex;align-items:center;justify-content:space-between}.field{display:grid;grid-template-columns:90px 1fr;gap:5px;padding:5px 7px;align-items:center}.field label{font-size:11px;color:#aeb4c1}.field input,.field select{width:100%;min-width:0;background:#12151a;color:#eee;border:1px solid #363c49;border-radius:4px;padding:4px;font-size:12px}.xy{display:grid;grid-template-columns:1fr 1fr;gap:4px}.check{padding:6px 8px;display:flex;gap:7px;align-items:center}.assets{height:calc(100% - 32px);display:grid;grid-template-columns:repeat(auto-fill,minmax(72px,1fr));gap:6px;padding:7px;overflow:auto}.asset{height:68px;border:1px solid #303540;border-radius:5px;padding:5px;font-size:10px;background:#191c22;cursor:pointer}.asset b{display:block;font-size:19px}.scriptAsset:hover,.imageAsset:hover{background:#242933}.status{background:#1b1e25;border-top:1px solid #303540;padding:5px 9px;font-size:10px;color:#9299a8}.danger{color:#ff9898}.project-name{color:#c9c1ff;font-weight:600;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.modal input[type=text],.modal input[type=number]{width:100%;padding:8px;background:#12151a;color:#eee;border:1px solid #363c49;border-radius:5px;margin:8px 0}.hint{font-size:11px;color:#858c99;line-height:1.5;padding:6px}
+.modal{position:fixed;inset:0;background:#0009;display:flex;align-items:center;justify-content:center;z-index:10}.box{width:min(650px,90vw);background:#1b1f27;border:1px solid #454b58;border-radius:8px;padding:16px}.box.wide{width:min(1100px,96vw)}.box h2{margin:0 0 12px}
+.langChoice{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:10px 0}
+.langCard{border:1px solid #363c49;border-radius:8px;padding:14px;cursor:pointer;background:#12151a}
+.langCard:hover{background:#1b1f27}.langCard.picked{border-color:#8f7dff;background:#211c3a}
+.langCard b{display:block;font-size:14px;margin-bottom:4px;color:#c9c1ff}.langCard span{font-size:11px;color:#9299a8;line-height:1.5}
+.codeBox{width:100%;height:420px;resize:vertical;background:#0b0d11;color:#d9ddff;border:1px solid #454b58;border-radius:5px;padding:10px;font:12px Consolas,monospace;line-height:1.5}
+.bpWrap{display:grid;grid-template-columns:150px 1fr 210px;gap:8px;height:480px}
+.bpPalette{overflow:auto;border:1px solid #303540;border-radius:6px;padding:6px;background:#12151a}
+.bpPalette .cat{font-size:10px;text-transform:uppercase;color:#8a91a3;margin:8px 0 3px}
+.bpPalette button{display:block;width:100%;text-align:left;margin-bottom:3px;font-size:11px;padding:5px 7px}
+.bpCanvasWrap{position:relative;border:1px solid #303540;border-radius:6px;overflow:hidden;background:#0b0d11}
+.bpInspector{overflow:auto;border:1px solid #303540;border-radius:6px;padding:8px;background:#12151a}
+.errText{color:#ef7777;font-size:11px;padding:4px 7px;white-space:pre-wrap}
+</style>
+</head>
+<body>
+<div class="app">
+<header class="bar">
+<div class="logo">☾ Lunar Engine</div>
+<button id="new">New</button><button id="project">Project</button><button id="createObject">＋ Object</button><button id="save">Save</button><button id="load">Load</button>
+<button data-tool="select" class="active">↖ Select</button><button data-tool="move">✥ Move</button><button data-tool="rotate">↻ Rotate</button><button data-tool="scale">⤢ Scale</button>
+<button id="grid" class="active">Grid</button><button id="snap" class="active">Snap</button><button id="importSprite">Import Sprite</button><button id="makeSprite">Object → Sprite</button><button id="animate">Animate</button><div class="grow"></div>
+<span class="project-name" id="projectName">Untitled Project</span><button id="play">▶ Play</button><button id="stop">■ Stop</button><button id="build">Build Windows EXE</button>
+</header>
+<div class="main">
+<aside class="side left"><div class="title">Hierarchy</div><div class="body" id="hierarchy"></div></aside>
+<section class="center">
+<div class="viewport"><div class="tabs"><button id="sceneTab" class="active">Scene</button><button id="gameTab">Game</button></div><canvas id="view"></canvas></div>
+<div class="bottom"><div class="console"><div class="title">Console</div><div class="log" id="console"></div></div><div><div class="title">Assets</div><div class="assets" id="assets"></div><input id="spriteFile" type="file" accept="image/*" multiple style="display:none"></div></div>
+</section>
+<aside class="side right"><div class="title">Inspector</div><div class="body" id="inspector"></div></aside>
+</div>
+<footer class="status"><span id="status">Ready</span><span style="float:right">FPS <b id="fps">0</b> | Entities <b id="count">0</b></span></footer>
+</div>
+<div id="modal"></div>
+
+<script id="engine-lunarscript">/*
+ * LunarScript — the native scripting language of Lunar Engine.
+ *
+ * on start { ... }              runs once when the entity spawns
+ * on update(dt) { ... }         runs every frame
+ * on collision(other) { ... }   runs when this entity's collider hits another
+ *
+ * let x = 5;
+ * fn add(a, b) { return a + b; }
+ * if (self.x > 100) { self.x = 0; }
+ * while (x < 10) { x = x + 1; }
+ * for (let i = 0; i < 5; i = i + 1) { print(i); }
+ *
+ * Built-ins: self.*, input.key()/mouseDown()/mouseX/mouseY, time.dt/time.now,
+ * math.*, print(), random(a,b), spawn(name), findByName(name), distance(a,b)
+ *
+ * This file has zero dependencies and runs in the browser or in Node.
+ */
+(function (root, factory) {
+  if (typeof module === "object" && module.exports) module.exports = factory();
+  else root.LunarScript = factory();
+})(typeof self !== "undefined" ? self : this, function () {
+"use strict";
+
+// ---------------------------------------------------------------- LEXER ----
+const KEYWORDS = new Set(["let","fn","if","else","while","for","on","return",
+  "true","false","break","continue","null","and","or","not"]);
+
+class Token {
+  constructor(type, value, line) { this.type = type; this.value = value; this.line = line; }
+}
+
+class LunarSyntaxError extends Error {
+  constructor(msg, line) { super(`LunarScript syntax error (line ${line}): ${msg}`); this.line = line; }
+}
+
+class LunarRuntimeError extends Error {
+  constructor(msg, line) { super(`LunarScript runtime error${line ? " (line " + line + ")" : ""}: ${msg}`); this.line = line; }
+}
+
+function lex(src) {
+  const tokens = [];
+  let i = 0, line = 1;
+  const n = src.length;
+  const isDigit = c => c >= "0" && c <= "9";
+  const isAlpha = c => /[A-Za-z_]/.test(c);
+  const isAlnum = c => /[A-Za-z0-9_]/.test(c);
+
+  while (i < n) {
+    const c = src[i];
+    if (c === "\n") { line++; i++; continue; }
+    if (c === " " || c === "\t" || c === "\r") { i++; continue; }
+    if (c === "/" && src[i + 1] === "/") { while (i < n && src[i] !== "\n") i++; continue; }
+    if (c === "/" && src[i + 1] === "*") { i += 2; while (i < n && !(src[i] === "*" && src[i + 1] === "/")) { if (src[i] === "\n") line++; i++; } i += 2; continue; }
+
+    if (c === '"' || c === "'") {
+      const quote = c; let j = i + 1; let out = "";
+      while (j < n && src[j] !== quote) {
+        if (src[j] === "\\" && j + 1 < n) { const esc = src[j + 1]; out += esc === "n" ? "\n" : esc === "t" ? "\t" : esc; j += 2; }
+        else { out += src[j]; j++; }
+      }
+      if (j >= n) throw new LunarSyntaxError("unterminated string", line);
+      tokens.push(new Token("STRING", out, line));
+      i = j + 1; continue;
+    }
+
+    if (isDigit(c) || (c === "." && isDigit(src[i + 1]))) {
+      let j = i; while (j < n && (isDigit(src[j]) || src[j] === ".")) j++;
+      tokens.push(new Token("NUMBER", parseFloat(src.slice(i, j)), line));
+      i = j; continue;
+    }
+
+    if (isAlpha(c)) {
+      let j = i; while (j < n && isAlnum(src[j])) j++;
+      const word = src.slice(i, j);
+      tokens.push(new Token(KEYWORDS.has(word) ? word.toUpperCase() : "IDENT", word, line));
+      i = j; continue;
+    }
+
+    const two = src.slice(i, i + 2);
+    if (["==", "!=", "<=", ">=", "&&", "||", "+=", "-=", "*=", "/="].includes(two)) {
+      tokens.push(new Token(two, two, line)); i += 2; continue;
+    }
+    if ("+-*/%()=<>!{},;.".includes(c)) { tokens.push(new Token(c, c, line)); i++; continue; }
+
+    throw new LunarSyntaxError(`unexpected character '${c}'`, line);
+  }
+  tokens.push(new Token("EOF", null, line));
+  return tokens;
+}
+
+// --------------------------------------------------------------- PARSER ----
+// AST node shape: { kind, ...fields, line }
+class Parser {
+  constructor(tokens) { this.toks = tokens; this.pos = 0; }
+  peek(o = 0) { return this.toks[this.pos + o]; }
+  at(...types) { return types.includes(this.peek().type); }
+  advance() { return this.toks[this.pos++]; }
+  expect(type, msg) {
+    if (!this.at(type)) throw new LunarSyntaxError(msg || `expected '${type}' but got '${this.peek().type}'`, this.peek().line);
+    return this.advance();
+  }
+
+  parseProgram() {
+    const events = [], functions = [], globals = [];
+    while (!this.at("EOF")) {
+      if (this.at("ON")) events.push(this.parseEvent());
+      else if (this.at("FN")) functions.push(this.parseFunc());
+      else globals.push(this.parseStatement());
+    }
+    return { kind: "Program", events, functions, globals };
+  }
+
+  parseEvent() {
+    const line = this.advance().line; // 'on'
+    const name = this.expect("IDENT", "expected event name after 'on'").value;
+    const params = [];
+    if (this.at("(")) {
+      this.advance();
+      while (!this.at(")")) { params.push(this.expect("IDENT").value); if (this.at(",")) this.advance(); }
+      this.advance();
+    }
+    const body = this.parseBlock();
+    return { kind: "Event", name, params, body, line };
+  }
+
+  parseFunc() {
+    const line = this.advance().line; // 'fn'
+    const name = this.expect("IDENT", "expected function name").value;
+    this.expect("(");
+    const params = [];
+    while (!this.at(")")) { params.push(this.expect("IDENT").value); if (this.at(",")) this.advance(); }
+    this.advance();
+    const body = this.parseBlock();
+    return { kind: "Func", name, params, body, line };
+  }
+
+  parseBlock() {
+    this.expect("{");
+    const stmts = [];
+    while (!this.at("}")) stmts.push(this.parseStatement());
+    this.expect("}");
+    return { kind: "Block", stmts };
+  }
+
+  parseStatement() {
+    if (this.at("LET")) return this.parseLet();
+    if (this.at("IF")) return this.parseIf();
+    if (this.at("WHILE")) return this.parseWhile();
+    if (this.at("FOR")) return this.parseFor();
+    if (this.at("RETURN")) { const line = this.advance().line; const arg = this.at(";") ? null : this.parseExpr(); this.expect(";"); return { kind: "Return", arg, line }; }
+    if (this.at("BREAK")) { const line = this.advance().line; this.expect(";"); return { kind: "Break", line }; }
+    if (this.at("CONTINUE")) { const line = this.advance().line; this.expect(";"); return { kind: "Continue", line }; }
+    if (this.at("{")) return this.parseBlock();
+    const line = this.peek().line;
+    const expr = this.parseExpr();
+    this.expect(";", "expected ';' after expression");
+    return { kind: "ExprStmt", expr, line };
+  }
+
+  parseLet() {
+    const line = this.advance().line;
+    const name = this.expect("IDENT").value;
+    let init = null;
+    if (this.at("=")) { this.advance(); init = this.parseExpr(); }
+    this.expect(";");
+    return { kind: "Let", name, init, line };
+  }
+
+  parseIf() {
+    const line = this.advance().line;
+    this.expect("(");
+    const cond = this.parseExpr();
+    this.expect(")");
+    const then = this.parseBlock();
+    let elseBranch = null;
+    if (this.at("ELSE")) { this.advance(); elseBranch = this.at("IF") ? this.parseIf() : this.parseBlock(); }
+    return { kind: "If", cond, then, elseBranch, line };
+  }
+
+  parseWhile() {
+    const line = this.advance().line;
+    this.expect("(");
+    const cond = this.parseExpr();
+    this.expect(")");
+    const body = this.parseBlock();
+    return { kind: "While", cond, body, line };
+  }
+
+  parseFor() {
+    const line = this.advance().line;
+    this.expect("(");
+    const init = this.at(";") ? null : (this.at("LET") ? this.parseLet() : (() => { const e = { kind: "ExprStmt", expr: this.parseExpr(), line }; this.expect(";"); return e; })());
+    if (!init) this.expect(";");
+    const cond = this.at(";") ? { kind: "Bool", value: true } : this.parseExpr();
+    this.expect(";");
+    const update = this.at(")") ? null : this.parseExpr();
+    this.expect(")");
+    const body = this.parseBlock();
+    return { kind: "For", init, cond, update, body, line };
+  }
+
+  // expr precedence: assignment > or > and > equality > comparison > term > factor > unary > call > primary
+  parseExpr() { return this.parseAssignment(); }
+
+  parseAssignment() {
+    const line = this.peek().line;
+    const left = this.parseOr();
+    if (this.at("=", "+=", "-=", "*=", "/=")) {
+      const op = this.advance().type;
+      const value = this.parseAssignment();
+      if (left.kind !== "Ident" && left.kind !== "Member") throw new LunarSyntaxError("invalid assignment target", line);
+      return { kind: "Assign", op, target: left, value, line };
+    }
+    return left;
+  }
+
+  parseOr() { let l = this.parseAnd(); while (this.at("||", "OR")) { const line = this.advance().line; l = { kind: "Logical", op: "||", left: l, right: this.parseAnd(), line }; } return l; }
+  parseAnd() { let l = this.parseEquality(); while (this.at("&&", "AND")) { const line = this.advance().line; l = { kind: "Logical", op: "&&", left: l, right: this.parseEquality(), line }; } return l; }
+  parseEquality() { let l = this.parseComparison(); while (this.at("==", "!=")) { const op = this.advance().type; l = { kind: "Binary", op, left: l, right: this.parseComparison() }; } return l; }
+  parseComparison() { let l = this.parseTerm(); while (this.at("<", ">", "<=", ">=")) { const op = this.advance().type; l = { kind: "Binary", op, left: l, right: this.parseTerm() }; } return l; }
+  parseTerm() { let l = this.parseFactor(); while (this.at("+", "-")) { const op = this.advance().type; l = { kind: "Binary", op, left: l, right: this.parseFactor() }; } return l; }
+  parseFactor() { let l = this.parseUnary(); while (this.at("*", "/", "%")) { const op = this.advance().type; l = { kind: "Binary", op, left: l, right: this.parseUnary() }; } return l; }
+
+  parseUnary() {
+    if (this.at("!", "NOT") || (this.at("-"))) {
+      const op = this.advance().type;
+      return { kind: "Unary", op: (op === "NOT" ? "!" : op), arg: this.parseUnary() };
+    }
+    return this.parseCall();
+  }
+
+  parseCall() {
+    let expr = this.parsePrimary();
+    for (;;) {
+      if (this.at("(")) {
+        this.advance();
+        const args = [];
+        while (!this.at(")")) { args.push(this.parseExpr()); if (this.at(",")) this.advance(); }
+        this.advance();
+        expr = { kind: "Call", callee: expr, args };
+      } else if (this.at(".")) {
+        this.advance();
+        const name = this.expect("IDENT").value;
+        expr = { kind: "Member", object: expr, prop: name };
+      } else break;
+    }
+    return expr;
+  }
+
+  parsePrimary() {
+    const t = this.peek();
+    if (this.at("NUMBER")) { this.advance(); return { kind: "Number", value: t.value }; }
+    if (this.at("STRING")) { this.advance(); return { kind: "String", value: t.value }; }
+    if (this.at("TRUE")) { this.advance(); return { kind: "Bool", value: true }; }
+    if (this.at("FALSE")) { this.advance(); return { kind: "Bool", value: false }; }
+    if (this.at("NULL")) { this.advance(); return { kind: "Null" }; }
+    if (this.at("IDENT")) { this.advance(); return { kind: "Ident", name: t.value }; }
+    if (this.at("(")) { this.advance(); const e = this.parseExpr(); this.expect(")"); return e; }
+    throw new LunarSyntaxError(`unexpected token '${t.type}'`, t.line);
+  }
+}
+
+function parse(src) { return new Parser(lex(src)).parseProgram(); }
+
+// ------------------------------------------------------------ INTERPRETER --
+class Environment {
+  constructor(parent = null) { this.vars = new Map(); this.parent = parent; }
+  declare(name, value) { this.vars.set(name, value); }
+  has(name) { return this.vars.has(name) || (this.parent && this.parent.has(name)); }
+  get(name) {
+    if (this.vars.has(name)) return this.vars.get(name);
+    if (this.parent) return this.parent.get(name);
+    throw new LunarRuntimeError(`undefined variable '${name}'`);
+  }
+  set(name, value) {
+    if (this.vars.has(name)) { this.vars.set(name, value); return; }
+    if (this.parent) return this.parent.set(name, value);
+    // implicit global declaration, forgiving for beginners
+    this.vars.set(name, value);
+  }
+}
+
+const BREAK = Symbol("break"), CONTINUE = Symbol("continue");
+class ReturnSignal { constructor(value) { this.value = value; } }
+
+class LunarFunction {
+  constructor(decl, closure) { this.decl = decl; this.closure = closure; }
+  call(interp, args) {
+    const env = new Environment(this.closure);
+    this.decl.params.forEach((p, i) => env.declare(p, args[i] !== undefined ? args[i] : null));
+    const result = interp.execBlock(this.decl.body, env);
+    return result instanceof ReturnSignal ? result.value : null;
+  }
+}
+
+class Program {
+  constructor(source, host) {
+    this.ast = parse(source);
+    this.host = host || {};
+    this.globals = new Environment();
+    this.globals.declare("self", this.host.self || {});
+    this.globals.declare("input", this.host.input || {});
+    this.globals.declare("time", this.host.time || {});
+    this.globals.declare("math", Object.assign({ PI: Math.PI, abs: Math.abs, floor: Math.floor, ceil: Math.ceil,
+      round: Math.round, sqrt: Math.sqrt, sin: Math.sin, cos: Math.cos, min: Math.min, max: Math.max,
+      clamp: (v, a, b) => Math.min(b, Math.max(a, v)) }, this.host.math || {}));
+    this.globals.declare("print", (...a) => (this.host.print || console.log)(...a));
+    this.globals.declare("random", (a, b) => a + Math.random() * (b - a));
+    this.globals.declare("distance", (a, b) => Math.hypot((a.x || 0) - (b.x || 0), (a.y || 0) - (b.y || 0)));
+    this.globals.declare("spawn", (name) => (this.host.spawn ? this.host.spawn(name) : null));
+    this.globals.declare("findByName", (name) => (this.host.findByName ? this.host.findByName(name) : null));
+    this.functions = new Map();
+    for (const fn of this.ast.functions) this.functions.set(fn.name, new LunarFunction(fn, this.globals));
+    for (const [name, fn] of this.functions) this.globals.declare(name, (...args) => fn.call(this, args));
+    this.events = new Map();
+    for (const ev of this.ast.events) this.events.set(ev.name, ev);
+    for (const stmt of this.ast.globals) this.execStatement(stmt, this.globals);
+  }
+
+  trigger(eventName, args = []) {
+    const ev = this.events.get(eventName);
+    if (!ev) return;
+    const env = new Environment(this.globals);
+    ev.params.forEach((p, i) => env.declare(p, args[i] !== undefined ? args[i] : null));
+    this.execBlock(ev.body, env);
+  }
+
+  hasEvent(name) { return this.events.has(name); }
+
+  execBlock(block, env) {
+    for (const stmt of block.stmts) {
+      const sig = this.execStatement(stmt, env);
+      if (sig === BREAK || sig === CONTINUE || sig instanceof ReturnSignal) return sig;
+    }
+    return null;
+  }
+
+  execStatement(stmt, env) {
+    switch (stmt.kind) {
+      case "Let": env.declare(stmt.name, stmt.init ? this.evalExpr(stmt.init, env) : null); return null;
+      case "ExprStmt": this.evalExpr(stmt.expr, env); return null;
+      case "Block": { const inner = new Environment(env); return this.execBlock(stmt, inner); }
+      case "If": {
+        if (this.truthy(this.evalExpr(stmt.cond, env))) return this.execBlock(stmt.then, new Environment(env));
+        if (stmt.elseBranch) return stmt.elseBranch.kind === "If" ? this.execStatement(stmt.elseBranch, env) : this.execBlock(stmt.elseBranch, new Environment(env));
+        return null;
+      }
+      case "While": {
+        let guard = 0;
+        while (this.truthy(this.evalExpr(stmt.cond, env))) {
+          if (++guard > 2_000_000) throw new LunarRuntimeError("possible infinite loop in while", stmt.line);
+          const sig = this.execBlock(stmt.body, new Environment(env));
+          if (sig === BREAK) break;
+          if (sig instanceof ReturnSignal) return sig;
+        }
+        return null;
+      }
+      case "For": {
+        const scope = new Environment(env);
+        if (stmt.init) this.execStatement(stmt.init, scope);
+        let guard = 0;
+        while (this.truthy(this.evalExpr(stmt.cond, scope))) {
+          if (++guard > 2_000_000) throw new LunarRuntimeError("possible infinite loop in for", stmt.line);
+          const sig = this.execBlock(stmt.body, new Environment(scope));
+          if (sig === BREAK) break;
+          if (sig instanceof ReturnSignal) return sig;
+          if (stmt.update) this.evalExpr(stmt.update, scope);
+        }
+        return null;
+      }
+      case "Return": return new ReturnSignal(stmt.arg ? this.evalExpr(stmt.arg, env) : null);
+      case "Break": return BREAK;
+      case "Continue": return CONTINUE;
+      default: throw new LunarRuntimeError(`unknown statement '${stmt.kind}'`);
+    }
+  }
+
+  truthy(v) { return v !== false && v !== null && v !== undefined && v !== 0 && v !== ""; }
+
+  evalExpr(node, env) {
+    switch (node.kind) {
+      case "Number": case "String": case "Bool": return node.value;
+      case "Null": return null;
+      case "Ident": return env.get(node.name);
+      case "Member": { const obj = this.evalExpr(node.object, env); return obj == null ? null : obj[node.prop]; }
+      case "Assign": {
+        const val = this.evalExpr(node.value, env);
+        let finalVal = val;
+        if (node.op !== "=") {
+          const cur = this.evalExpr(node.target, env);
+          finalVal = node.op === "+=" ? cur + val : node.op === "-=" ? cur - val : node.op === "*=" ? cur * val : cur / val;
+        }
+        if (node.target.kind === "Ident") env.set(node.target.name, finalVal);
+        else { const obj = this.evalExpr(node.target.object, env); if (obj) obj[node.target.prop] = finalVal; }
+        return finalVal;
+      }
+      case "Logical": {
+        const l = this.evalExpr(node.left, env);
+        if (node.op === "&&") return this.truthy(l) ? this.evalExpr(node.right, env) : l;
+        return this.truthy(l) ? l : this.evalExpr(node.right, env);
+      }
+      case "Unary": {
+        const v = this.evalExpr(node.arg, env);
+        return node.op === "!" ? !this.truthy(v) : -v;
+      }
+      case "Binary": {
+        const l = this.evalExpr(node.left, env), r = this.evalExpr(node.right, env);
+        switch (node.op) {
+          case "+": return l + r; case "-": return l - r; case "*": return l * r;
+          case "/": return l / r; case "%": return l % r;
+          case "==": return l === r; case "!=": return l !== r;
+          case "<": return l < r; case ">": return l > r; case "<=": return l <= r; case ">=": return l >= r;
+        }
+        break;
+      }
+      case "Call": {
+        const args = node.args.map(a => this.evalExpr(a, env));
+        if (node.callee.kind === "Member") {
+          const obj = this.evalExpr(node.callee.object, env);
+          const fn = obj ? obj[node.callee.prop] : null;
+          if (typeof fn !== "function") throw new LunarRuntimeError(`'${node.callee.prop}' is not a function`);
+          return fn.apply(obj, args);
+        }
+        const fn = this.evalExpr(node.callee, env);
+        if (typeof fn !== "function") throw new LunarRuntimeError(`value is not callable`);
+        return fn(...args);
+      }
+      default: throw new LunarRuntimeError(`unknown expression '${node.kind}'`);
+    }
+  }
+}
+
+function compile(source, host) { return new Program(source, host); }
+
+return { lex, parse, compile, Program, LunarSyntaxError, LunarRuntimeError };
+});
+</script>
+<script id="engine-blueprint">/*
+ * Lunar Blueprints — visual node-graph scripting, the no-code alternative
+ * to LunarScript. Same host API (self/input/time/math/spawn/etc), same
+ * events (Start/Update/Collision), different authoring surface.
+ *
+ * Graph shape:
+ * {
+ *   nodes: [ { id, type, x, y, data: {...} } ],
+ *   links: [ { from: nodeId, fromPort: name, to: nodeId, toPort: name, kind: "exec"|"data" } ]
+ * }
+ *
+ * Node catalogue lives in BP_NODE_DEFS below — each def declares its exec
+ * and data ports so the editor UI and the runtime share one source of truth.
+ */
+(function (root, factory) {
+  if (typeof module === "object" && module.exports) module.exports = factory();
+  else root.LunarBlueprint = factory();
+})(typeof self !== "undefined" ? self : this, function () {
+"use strict";
+
+// Each node type declares: category, execIn/execOut (booleans), dataIn (named list),
+// dataOut (named list), and either exec(ctx,node,inputs) for action/flow nodes
+// or eval(ctx,node,inputs) for pure value nodes.
+const BP_NODE_DEFS = {
+  // ---- Events (graph entry points, exec-out only) ----
+  "Event/OnStart":     { category: "event", event: "start", execOut: ["out"] },
+  "Event/OnUpdate":    { category: "event", event: "update", execOut: ["out"], dataOut: ["dt"] },
+  "Event/OnCollision": { category: "event", event: "collision", execOut: ["out"], dataOut: ["other"] },
+
+  // ---- Flow control ----
+  "Flow/If": {
+    category: "flow", execIn: true, execOut: ["true", "false"], dataIn: ["cond"],
+    exec(ctx, node, inp) { return inp.cond ? "true" : "false"; }
+  },
+  "Flow/Sequence": {
+    category: "flow", execIn: true, execOut: ["1", "2", "3"],
+    exec(ctx, node, inp, run) { run("1"); run("2"); run("3"); return null; }
+  },
+
+  // ---- Actions (side effects on self / world) ----
+  "Action/MoveBy": {
+    category: "action", execIn: true, execOut: ["out"], dataIn: ["dx", "dy"],
+    exec(ctx) { return "out"; },
+    apply(ctx, inp) { ctx.self.x += (inp.dx || 0); ctx.self.y += (inp.dy || 0); }
+  },
+  "Action/SetVelocity": {
+    category: "action", execIn: true, execOut: ["out"], dataIn: ["vx", "vy"],
+    apply(ctx, inp) { ctx.self.velX = inp.vx || 0; ctx.self.velY = inp.vy || 0; }
+  },
+  "Action/Print": {
+    category: "action", execIn: true, execOut: ["out"], dataIn: ["value"],
+    apply(ctx, inp) { (ctx.print || console.log)(String(inp.value)); }
+  },
+  "Action/DestroySelf": {
+    category: "action", execIn: true, execOut: ["out"],
+    apply(ctx) { if (ctx.destroySelf) ctx.destroySelf(); }
+  },
+  "Action/PlayAnimation": {
+    category: "action", execIn: true, execOut: ["out"], dataIn: ["name"],
+    apply(ctx, inp) { if (ctx.playAnimation) ctx.playAnimation(inp.name); }
+  },
+  "Action/Spawn": {
+    category: "action", execIn: true, execOut: ["out"], dataIn: ["name"],
+    apply(ctx, inp) { if (ctx.spawn) ctx.spawn(inp.name); }
+  },
+
+  // ---- Values (pure, no exec pins) ----
+  "Value/Number":     { category: "value", dataOut: ["value"], eval: (ctx, node) => Number(node.data.value || 0) },
+  "Value/String":     { category: "value", dataOut: ["value"], eval: (ctx, node) => String(node.data.value || "") },
+  "Value/Bool":       { category: "value", dataOut: ["value"], eval: (ctx, node) => !!node.data.value },
+  "Value/SelfX":      { category: "value", dataOut: ["value"], eval: (ctx) => ctx.self.x },
+  "Value/SelfY":      { category: "value", dataOut: ["value"], eval: (ctx) => ctx.self.y },
+  "Value/KeyDown":    { category: "value", dataIn: ["key"], dataOut: ["value"], eval: (ctx, node, inp) => !!(ctx.input && ctx.input.key(inp.key || node.data.key)) },
+  "Value/Compare": {
+    category: "value", dataIn: ["a", "b"], dataOut: ["value"],
+    eval(ctx, node, inp) {
+      const a = inp.a, b = inp.b, op = node.data.op || "==";
+      switch (op) { case "==": return a === b; case "!=": return a !== b; case "<": return a < b; case ">": return a > b; case "<=": return a <= b; case ">=": return a >= b; }
+      return false;
+    }
+  },
+  "Value/Math": {
+    category: "value", dataIn: ["a", "b"], dataOut: ["value"],
+    eval(ctx, node, inp) {
+      const a = Number(inp.a || 0), b = Number(inp.b || 0), op = node.data.op || "+";
+      switch (op) { case "+": return a + b; case "-": return a - b; case "*": return a * b; case "/": return a / (b || 1); }
+      return 0;
+    }
+  },
+  "Value/And": { category: "value", dataIn: ["a", "b"], dataOut: ["value"], eval: (ctx, node, inp) => !!(inp.a && inp.b) },
+  "Value/Or":  { category: "value", dataIn: ["a", "b"], dataOut: ["value"], eval: (ctx, node, inp) => !!(inp.a || inp.b) },
+  "Value/Not": { category: "value", dataIn: ["a"], dataOut: ["value"], eval: (ctx, node, inp) => !inp.a },
+};
+
+class BlueprintGraph {
+  constructor(graphData, host) {
+    this.nodes = new Map((graphData.nodes || []).map(n => [n.id, n]));
+    this.links = graphData.links || [];
+    this.host = host || {};
+  }
+
+  hasEvent(name) { for (const n of this.nodes.values()) { const def = BP_NODE_DEFS[n.type]; if (def && def.category === "event" && def.event === name) return true; } return false; }
+
+  // find the single link feeding a given data input port
+  findDataLink(nodeId, port) { return this.links.find(l => l.kind !== "exec" && l.to === nodeId && l.toPort === port); }
+  // find all exec links leaving a given exec output port
+  findExecLinks(nodeId, port) { return this.links.filter(l => l.kind === "exec" && l.from === nodeId && l.fromPort === port); }
+
+  // Resolve the value a node itself produces on a given data-out port —
+  // either a literal/eval'd value node, or a pseudo-value from the event
+  // that is currently firing (dt, other, ...).
+  resolveNodeOutput(node, port, ctx, depthGuard) {
+    const def = BP_NODE_DEFS[node.type];
+    if (!def) return undefined;
+    if (def.category === "event") {
+      if (!this._eventArgNames) return undefined;
+      const idx = this._eventArgNames.indexOf(port);
+      return idx >= 0 ? this._eventArgs[idx] : undefined;
+    }
+    if (def.eval) {
+      const inputs = {};
+      for (const p of def.dataIn || []) inputs[p] = this.evalData(node.id, p, ctx, depthGuard + 1);
+      return def.eval(ctx, node, inputs);
+    }
+    return undefined;
+  }
+
+  evalData(nodeId, port, ctx, depthGuard = 0) {
+    if (depthGuard > 500) throw new Error("Blueprint: data cycle detected");
+    const link = this.findDataLink(nodeId, port);
+    const node = this.nodes.get(nodeId);
+    if (!link) {
+      // no wire: fall back to the node's own literal field of the same name, if any
+      return node && node.data ? node.data[port] : undefined;
+    }
+    const srcNode = this.nodes.get(link.from);
+    if (!srcNode) return undefined;
+    return this.resolveNodeOutput(srcNode, link.fromPort, ctx, depthGuard);
+  }
+
+  runExec(nodeId, ctx, guard = { n: 0 }) {
+    if (!nodeId) return;
+    if (++guard.n > 100000) throw new Error("Blueprint: possible infinite loop");
+    const node = this.nodes.get(nodeId);
+    if (!node) return;
+    const def = BP_NODE_DEFS[node.type];
+    if (!def) return;
+    const inputs = {};
+    for (const p of def.dataIn || []) inputs[p] = this.evalData(node.id, p, ctx);
+    if (def.apply) def.apply(ctx, inputs, node);
+    let outPort = "out";
+    if (def.exec) outPort = def.exec(ctx, node, inputs, (port) => {
+      for (const link of this.findExecLinks(node.id, port)) this.runExec(link.to, ctx, guard);
+    }) || null;
+    if (outPort) for (const link of this.findExecLinks(node.id, outPort)) this.runExec(link.to, ctx, guard);
+  }
+
+  trigger(eventName, args, ctx) {
+    for (const node of this.nodes.values()) {
+      const def = BP_NODE_DEFS[node.type];
+      if (def && def.category === "event" && def.event === eventName) {
+        const fullCtx = Object.assign({}, ctx, { _eventArgs: args });
+        // seed data-out for event nodes (e.g. dt, other) via a synthetic lookup
+        this._eventArgNames = def.dataOut || [];
+        this._eventArgs = args || [];
+        for (const link of this.findExecLinks(node.id, "out")) this.runExec(link.to, fullCtx);
+      }
+    }
+  }
+}
+
+function compile(graphData, host) { return new BlueprintGraph(graphData, host); }
+
+return { BP_NODE_DEFS, BlueprintGraph, compile };
+});
+</script>
+<script id="engine-core">/*
+ * Lunar Engine — core (rendering-agnostic; canvas rendering lives in the editor shell).
+ * Real ECS: Entities hold Components, Systems act on the Scene each frame.
+ * Ships with a ScriptSystem that drives entities from either a LunarScript
+ * program or a Blueprint graph through one shared host API.
+ */
+(function (root, factory) {
+  if (typeof module === "object" && module.exports) module.exports = factory(require("./lunarscript.js"), require("./blueprint.js"));
+  else root.LunarEngineCore = factory(root.LunarScript, root.LunarBlueprint);
+})(typeof self !== "undefined" ? self : this, function (LunarScript, LunarBlueprint) {
+"use strict";
+
+// ------------------------------------------------------------- COMPONENTS --
+let _uid = 1;
+class Component { constructor() { this.enabled = true; this.entity = null; } update() {} }
+
+class Transform extends Component {
+  constructor() { super(); this.position = { x: 0, y: 0 }; this.rotation = 0; this.scale = { x: 1, y: 1 }; }
+}
+
+class SpriteRenderer extends Component {
+  constructor() {
+    super();
+    this.color = "#8174ff"; this.width = 96; this.height = 96; this.shape = "box";
+    this.opacity = 1; this.visible = true; this.sortingLayer = 0; this.image = null; this.imageName = "";
+  }
+}
+
+class Animator extends Component {
+  constructor() { super(); this.clips = {}; this.current = ""; this.playing = false; this.time = 0; }
+  play(name) { if (this.clips[name]) { this.current = name; this.playing = true; this.time = 0; } }
+  stop() { this.playing = false; this.time = 0; }
+  update(dt) {
+    if (!this.playing || !this.current || !this.clips[this.current]) return;
+    const clip = this.clips[this.current], dur = Math.max(0.001, clip.duration || 1);
+    this.time += dt;
+    if (this.time > dur) { if (clip.loop) this.time %= dur; else { this.time = dur; this.playing = false; } }
+    if (typeof clip.apply === "function") clip.apply(this.entity, this.time);
+  }
+}
+
+class Rigidbody2D extends Component {
+  constructor() { super(); this.bodyType = "Dynamic"; this.velocity = { x: 0, y: 0 }; this.gravityScale = 1; this.restitution = 0.15; this.useGravity = true; }
+}
+
+class BoxCollider2D extends Component {
+  constructor() { super(); this.size = { x: 96, y: 96 }; this.isTrigger = false; }
+}
+
+class ParticleEmitter extends Component {
+  constructor() { super(); this.rate = 15; this.life = 1; this.speed = 80; this.gravity = 30; this.size = 5; this.color = "#b7aaff"; this.ps = []; this.acc = 0; }
+  update(dt) {
+    this.acc += dt * this.rate;
+    while (this.acc >= 1) {
+      this.acc--;
+      this.ps.push({ x: this.entity.transform.position.x, y: this.entity.transform.position.y, vx: (Math.random() - 0.5) * this.speed, vy: (Math.random() - 0.5) * this.speed, life: this.life });
+    }
+    for (const p of this.ps) { p.life -= dt; p.x += p.vx * dt; p.y += p.vy * dt; p.vy += this.gravity * dt; }
+    this.ps = this.ps.filter(p => p.life > 0);
+  }
+}
+
+// A single script slot on an entity. language: "lunarscript" | "blueprint".
+class ScriptComponent extends Component {
+  constructor() {
+    super();
+    this.language = "lunarscript";
+    this.source = "on start {\n  print(\"Hello from \" + self.name);\n}\n\non update(dt) {\n  \n}\n";
+    this.graph = { nodes: [], links: [] };
+    this._compiled = null;
+    this._error = null;
+    this._startedOk = false;
+  }
+}
+
+class Entity {
+  constructor(id, name) {
+    this.id = id; this.name = name; this.active = true; this.tag = "Untagged";
+    this.parent = null; this.children = []; this.components = [];
+    this.transform = this.add(new Transform());
+    this.add(new SpriteRenderer());
+  }
+  add(c) { c.entity = this; this.components.push(c); return c; }
+  remove(c) { const i = this.components.indexOf(c); if (i >= 0) this.components.splice(i, 1); }
+  get(T) { return this.components.find(c => c instanceof T) || null; }
+  getAll(T) { return this.components.filter(c => c instanceof T); }
+}
+
+class Scene {
+  constructor(name = "Main Scene") { this.name = name; this.entities = []; this.nextId = 1; }
+  create(name = "GameObject") { const e = new Entity(this.nextId++, name); this.entities.push(e); return e; }
+  destroy(entity) { const i = this.entities.indexOf(entity); if (i >= 0) this.entities.splice(i, 1); }
+  find(id) { return this.entities.find(e => e.id === id) || null; }
+  findByName(name) { return this.entities.find(e => e.name === name) || null; }
+}
+
+// ----------------------------------------------------------------- INPUT ---
+class InputSystem {
+  constructor() {
+    this.keys = new Set(); this.mouse = { x: 0, y: 0, down: false };
+    this._kd = e => this.keys.add(e.code); this._ku = e => this.keys.delete(e.code); this._bl = () => this.keys.clear();
+    if (typeof addEventListener === "function") {
+      addEventListener("keydown", this._kd); addEventListener("keyup", this._ku); addEventListener("blur", this._bl);
+    }
+  }
+  key(code) { return this.keys.has(code); }
+  mouseDown() { return this.mouse.down; }
+  dispose() {
+    if (typeof removeEventListener === "function") { removeEventListener("keydown", this._kd); removeEventListener("keyup", this._ku); removeEventListener("blur", this._bl); }
+  }
+}
+
+// --------------------------------------------------------------- PHYSICS ---
+// Simple AABB physics with real collision *events* (not just push-out), so
+// scripts can react via on collision(other).
+class PhysicsSystem {
+  constructor() { this.gravity = { x: 0, y: 500 }; this._activePairs = new Set(); }
+
+  step(scene, dt, onCollision) {
+    const bodies = scene.entities.filter(e => e.active && e.get(Rigidbody2D) && e.get(BoxCollider2D));
+    for (const e of bodies) {
+      const rb = e.get(Rigidbody2D);
+      if (rb.bodyType === "Dynamic") {
+        if (rb.useGravity) rb.velocity.y += this.gravity.y * rb.gravityScale * dt;
+        e.transform.position.x += rb.velocity.x * dt;
+        e.transform.position.y += rb.velocity.y * dt;
+      }
+    }
+    const stillTouching = new Set();
+    for (const a of bodies) {
+      const ra = a.get(Rigidbody2D), ca = a.get(BoxCollider2D);
+      if (ra.bodyType !== "Dynamic") continue;
+      for (const b of bodies) {
+        if (a === b) continue;
+        const pairKey = a.id < b.id ? `${a.id}:${b.id}` : `${b.id}:${a.id}`;
+        const cb = b.get(BoxCollider2D);
+        const dx = b.transform.position.x - a.transform.position.x;
+        const dy = b.transform.position.y - a.transform.position.y;
+        const ox = ca.size.x / 2 + cb.size.x / 2 - Math.abs(dx);
+        const oy = ca.size.y / 2 + cb.size.y / 2 - Math.abs(dy);
+        if (ox > 0 && oy > 0) {
+          stillTouching.add(pairKey);
+          // Only fire the script event the frame contact *begins* (like
+          // Unity's OnCollisionEnter), not every frame two bodies rest together.
+          if (!this._activePairs.has(pairKey)) { this._activePairs.add(pairKey); if (onCollision) onCollision(a, b); }
+          if (!ca.isTrigger && !cb.isTrigger) {
+            const rb2 = b.get(Rigidbody2D);
+            if (!rb2 || rb2.bodyType === "Static") {
+              if (ox < oy) { a.transform.position.x += dx > 0 ? -ox : ox; ra.velocity.x *= -ra.restitution; }
+              else { a.transform.position.y += dy > 0 ? -oy : oy; ra.velocity.y *= -ra.restitution; }
+            }
+          }
+        }
+      }
+    }
+    for (const key of this._activePairs) if (!stillTouching.has(key)) this._activePairs.delete(key);
+  }
+}
+
+// ---------------------------------------------------------- SCRIPT SYSTEM --
+// Bridges an Entity's live components to a flat, easy-to-script "self" object,
+// and drives whichever backend (LunarScript source or Blueprint graph) the
+// ScriptComponent is set to. This is the one seam a beginner never has to
+// know is there: `self.x = self.x + 1` works identically either way.
+function makeSelfHandle(entity, world) {
+  const t = entity.transform;
+  return {
+    get x() { return t.position.x; }, set x(v) { t.position.x = v; },
+    get y() { return t.position.y; }, set y(v) { t.position.y = v; },
+    get rot() { return t.rotation; }, set rot(v) { t.rotation = v; },
+    get scaleX() { return t.scale.x; }, set scaleX(v) { t.scale.x = v; },
+    get scaleY() { return t.scale.y; }, set scaleY(v) { t.scale.y = v; },
+    get velX() { const rb = entity.get(Rigidbody2D); return rb ? rb.velocity.x : 0; },
+    set velX(v) { const rb = entity.get(Rigidbody2D); if (rb) rb.velocity.x = v; },
+    get velY() { const rb = entity.get(Rigidbody2D); return rb ? rb.velocity.y : 0; },
+    set velY(v) { const rb = entity.get(Rigidbody2D); if (rb) rb.velocity.y = v; },
+    get visible() { const s = entity.get(SpriteRenderer); return s ? s.visible : true; },
+    set visible(v) { const s = entity.get(SpriteRenderer); if (s) s.visible = v; },
+    get color() { const s = entity.get(SpriteRenderer); return s ? s.color : "#ffffff"; },
+    set color(v) { const s = entity.get(SpriteRenderer); if (s) s.color = v; },
+    get width() { const s = entity.get(SpriteRenderer); return s ? s.width : 0; },
+    set width(v) { const s = entity.get(SpriteRenderer); if (s) s.width = v; },
+    get height() { const s = entity.get(SpriteRenderer); return s ? s.height : 0; },
+    set height(v) { const s = entity.get(SpriteRenderer); if (s) s.height = v; },
+    get name() { return entity.name; }, set name(v) { entity.name = v; },
+    get tag() { return entity.tag; }, set tag(v) { entity.tag = v; },
+    get active() { return entity.active; }, set active(v) { entity.active = v; },
+    destroy() { world.destroyEntity(entity); },
+    playAnimation(n) { const a = entity.get(Animator); if (a) a.play(n); },
+    stopAnimation() { const a = entity.get(Animator); if (a) a.stop(); },
+    id: entity.id,
+  };
+}
+
+class ScriptSystem {
+  constructor(world) { this.world = world; }
+
+  makeHost(entity, scriptComp) {
+    const self = makeSelfHandle(entity, this.world);
+    const input = this.world.input;
+    const world = this.world;
+    return {
+      self, input,
+      time: { get dt() { return world.lastDt || 0; }, get now() { return world.time || 0; } },
+      print: (...a) => world.log("info", `[${entity.name}] ` + a.join(" ")),
+      spawn: (name) => { const e = world.scene.create(name); return makeSelfHandle(e, world); },
+      findByName: (name) => { const e = world.scene.findByName(name); return e ? makeSelfHandle(e, world) : null; },
+      destroySelf: () => world.destroyEntity(entity),
+      playAnimation: (n) => { const a = entity.get(Animator); if (a) a.play(n); },
+    };
+  }
+
+  compile(entity, s) {
+    s._error = null;
+    try {
+      if (s.language === "blueprint") {
+        s._compiled = LunarBlueprint.compile(s.graph, {});
+      } else {
+        s._compiled = LunarScript.compile(s.source, this.makeHost(entity, s));
+      }
+    } catch (err) {
+      s._compiled = null;
+      s._error = err.message || String(err);
+      this.world.log("err", `[${entity.name}] ${s._error}`);
+    }
+  }
+
+  compileAll() {
+    for (const e of this.world.scene.entities) {
+      const s = e.get(ScriptComponent);
+      if (s) this.compile(e, s);
+    }
+  }
+
+  start() {
+    for (const e of this.world.scene.entities) {
+      const s = e.get(ScriptComponent);
+      if (!s || !s._compiled) continue;
+      try {
+        if (s.language === "blueprint") s._compiled.trigger("start", [], this.makeHost(e, s));
+        else s._compiled.trigger("start");
+        s._startedOk = true;
+      } catch (err) { this.world.log("err", `[${e.name}] ${err.message || err}`); }
+    }
+  }
+
+  update(dt) {
+    for (const e of this.world.scene.entities) {
+      if (!e.active) continue;
+      const s = e.get(ScriptComponent);
+      if (!s || !s.enabled || !s._compiled) continue;
+      try {
+        if (s.language === "blueprint") s._compiled.trigger("update", [dt], this.makeHost(e, s));
+        else s._compiled.trigger("update", [dt]);
+      } catch (err) { this.world.log("err", `[${e.name}] ${err.message || err}`); s.enabled = false; }
+    }
+  }
+
+  collision(a, b) {
+    for (const [self, other] of [[a, b], [b, a]]) {
+      const s = self.get(ScriptComponent);
+      if (!s || !s.enabled || !s._compiled) continue;
+      try {
+        const otherHandle = makeSelfHandle(other, this.world);
+        if (s.language === "blueprint") s._compiled.trigger("collision", [otherHandle], this.makeHost(self, s));
+        else s._compiled.trigger("collision", [otherHandle]);
+      } catch (err) { this.world.log("err", `[${self.name}] ${err.message || err}`); }
+    }
+  }
+}
+
+// ------------------------------------------------------------------ WORLD --
+// Ties Scene + Input + Physics + ScriptSystem together into one runnable game.
+class World {
+  constructor(scene, opts = {}) {
+    this.scene = scene;
+    this.input = opts.input || new InputSystem();
+    this.physics = new PhysicsSystem();
+    this.scripts = new ScriptSystem(this);
+    this.time = 0; this.lastDt = 0;
+    this.onLog = opts.onLog || (() => {});
+    this._pendingDestroy = [];
+  }
+  log(level, msg) { this.onLog(level, msg); }
+  destroyEntity(entity) { this._pendingDestroy.push(entity); }
+
+  begin() { this.scripts.compileAll(); this.scripts.start(); }
+
+  step(dt) {
+    this.lastDt = dt; this.time += dt;
+    for (const e of this.scene.entities) {
+      if (!e.active) continue;
+      for (const c of e.components) { if (c.enabled && !(c instanceof ScriptComponent)) c.update(dt); }
+    }
+    this.physics.step(this.scene, dt, (a, b) => this.scripts.collision(a, b));
+    this.scripts.update(dt);
+    if (this._pendingDestroy.length) {
+      for (const e of this._pendingDestroy) this.scene.destroy(e);
+      this._pendingDestroy.length = 0;
+    }
+  }
+
+  end() { this.input.dispose && this.scripts === this.scripts; }
+}
+
+return {
+  Component, Transform, SpriteRenderer, Animator, Rigidbody2D, BoxCollider2D, ParticleEmitter, ScriptComponent,
+  Entity, Scene, InputSystem, PhysicsSystem, ScriptSystem, World, makeSelfHandle,
+};
+});
+</script>
+<script>"use strict";
+const Engine = window.LunarEngineCore;
+
+// ---------------------------------------------------------------- STATE ----
+const state = {
+  editScene: new Engine.Scene("Main Scene"),
+  world: null, playing: false,
+  projectName: "Untitled Project", projectLanguage: "lunarscript",
+  selected: null, tool: "select", grid: true, snap: true,
+  cam: { x: 0, y: 0 }, images: [], logs: [],
+  last: performance.now(), frames: 0, fpsTime: performance.now(), drag: null,
+};
+
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+function log(t, k = "info") {
+  state.logs.push([t, k]); state.logs = state.logs.slice(-150);
+  document.getElementById("console").innerHTML = state.logs.map(x => `<div class="${x[1]}">${esc(x[0])}</div>`).join("");
+  document.getElementById("console").scrollTop = 1e9;
+}
+function field(n, v) { return `<div class="field"><label>${n}</label>${v}</div>`; }
+function isDescendant(candidate, ancestor) { let p = candidate; while (p) { if (p === ancestor) return true; p = p.parent; } return false; }
+function closeModal() { document.getElementById("modal").innerHTML = ""; }
+window.closeModal = closeModal;
+
+// ------------------------------------------------------------- RENDERER ----
+class Renderer {
+  constructor(c) { this.c = c; this.x = c.getContext("2d"); this.zoom = 1; this.cam = { x: 0, y: 0 }; this.grid = true; }
+  resize() { const r = this.c.getBoundingClientRect(), d = devicePixelRatio || 1; this.c.width = r.width * d; this.c.height = r.height * d; this.x.setTransform(d, 0, 0, d, 0, 0); this.w = r.width; this.h = r.height; }
+  screen(p) { return { x: (p.x - this.cam.x) * this.zoom + this.w / 2, y: (p.y - this.cam.y) * this.zoom + this.h / 2 }; }
+  render(scene, selected) {
+    this.x.fillStyle = "#0c0e12"; this.x.fillRect(0, 0, this.w, this.h);
+    if (this.grid) {
+      const step = Math.max(8, 32 * this.zoom), ox = ((this.w / 2 - this.cam.x * this.zoom) % step + step) % step, oy = ((this.h / 2 - this.cam.y * this.zoom) % step + step) % step;
+      this.x.strokeStyle = "#1a1d24"; this.x.beginPath();
+      for (let x = ox; x < this.w; x += step) { this.x.moveTo(x, 0); this.x.lineTo(x, this.h); }
+      for (let y = oy; y < this.h; y += step) { this.x.moveTo(0, y); this.x.lineTo(this.w, y); }
+      this.x.stroke();
+    }
+    for (const e of scene.entities) {
+      if (!e.active) continue;
+      const s = e.get(Engine.SpriteRenderer);
+      if (!s || !s.visible) continue;
+      const p = this.screen(e.transform.position);
+      this.x.save(); this.x.translate(p.x, p.y); this.x.rotate(e.transform.rotation);
+      this.x.scale(e.transform.scale.x * this.zoom, e.transform.scale.y * this.zoom); this.x.globalAlpha = s.opacity;
+      if (s.image) {
+        const im = s.image._img;
+        if (im && im.complete) this.x.drawImage(im, -s.width / 2, -s.height / 2, s.width, s.height);
+        else { this.x.fillStyle = s.color; this.x.fillRect(-s.width / 2, -s.height / 2, s.width, s.height); }
+      } else {
+        this.x.fillStyle = s.color;
+        if (s.shape === "circle") { this.x.beginPath(); this.x.arc(0, 0, s.width / 2, 0, Math.PI * 2); this.x.fill(); }
+        else this.x.fillRect(-s.width / 2, -s.height / 2, s.width, s.height);
+      }
+      this.x.restore();
+      if (e === selected) {
+        this.x.strokeStyle = "#a99cff"; this.x.lineWidth = 2;
+        this.x.strokeRect(p.x - s.width * this.zoom / 2 - 5, p.y - s.height * this.zoom / 2 - 5, s.width * this.zoom + 10, s.height * this.zoom + 10);
+      }
+    }
+  }
+}
+const canvas = document.getElementById("view"), r = new Renderer(canvas);
+
+// --------------------------------------------------------- ANIMATION UTIL --
+function lerp(a, b, t) { return a + (b - a) * t; }
+function sampleTrack(keys, time, base) {
+  if (!keys || !keys.length) return base;
+  const sorted = [...keys].sort((a, b) => a.t - b.t);
+  if (time <= sorted[0].t) return sorted[0].v;
+  if (time >= sorted[sorted.length - 1].t) return sorted[sorted.length - 1].v;
+  for (let i = 0; i < sorted.length - 1; i++) { const a = sorted[i], b = sorted[i + 1]; if (time >= a.t && time <= b.t) { const u = (time - a.t) / Math.max(0.0001, b.t - a.t); return lerp(a.v, b.v, u); } }
+  return base;
+}
+function ensureTrack(clip, key) { clip.tracks = clip.tracks || {}; clip.tracks[key] = clip.tracks[key] || []; return clip.tracks[key]; }
+function addKeyframe(e, clip, time) {
+  const t = e.transform, s = e.get(Engine.SpriteRenderer), d = clip.duration || 1;
+  clip.duration = Math.max(d, time, 0.1);
+  [["positionX", t.position.x], ["positionY", t.position.y], ["rotation", t.rotation], ["scaleX", t.scale.x], ["scaleY", t.scale.y], ["opacity", s ? s.opacity : 1]].forEach(([k, v]) => {
+    const a = ensureTrack(clip, k); const hit = a.find(x => Math.abs(x.t - time) < 0.001); if (hit) hit.v = v; else a.push({ t: +time.toFixed(3), v });
+  });
+}
+// wire up Animator clip playback to use these tracks (engine-core calls clip.apply)
+function installAnimatorBridge() {
+  const origAdd = Engine.Entity.prototype.add;
+  Engine.Entity.prototype.add = function (c) {
+    if (c instanceof Engine.Animator) {
+      const clips = c.clips;
+      c.play = function (name) { if (this.clips[name]) { this.current = name; this.playing = true; this.time = 0; } };
+    }
+    return origAdd.call(this, c);
+  };
+}
+installAnimatorBridge();
+function applyClipToEntity(e, clip, time) {
+  const t = e.transform, s = e.get(Engine.SpriteRenderer), tr = clip.tracks || {};
+  if (tr.positionX) t.position.x = sampleTrack(tr.positionX, time, t.position.x);
+  if (tr.positionY) t.position.y = sampleTrack(tr.positionY, time, t.position.y);
+  if (tr.rotation) t.rotation = sampleTrack(tr.rotation, time, t.rotation);
+  if (tr.scaleX) t.scale.x = sampleTrack(tr.scaleX, time, t.scale.x);
+  if (tr.scaleY) t.scale.y = sampleTrack(tr.scaleY, time, t.scale.y);
+  if (tr.opacity && s) s.opacity = sampleTrack(tr.opacity, time, s.opacity);
+}
+// engine-core's Animator.update calls clip.apply(entity, time) — provide it per-clip on read.
+function patchClipApply(a) { for (const name in a.clips) { const c = a.clips[name]; if (!c.apply) c.apply = (entity, time) => applyClipToEntity(entity, c, time); } }
+
+// ----------------------------------------------------- SCENE (DE)SERIALIZE -
+function sceneToJSON(scene) {
+  return {
+    name: scene.name, nextId: scene.nextId,
+    entities: scene.entities.map(e => ({
+      id: e.id, name: e.name, active: e.active, tag: e.tag, parent: e.parent ? e.parent.id : null,
+      transform: { ...e.transform.position }, rotation: e.transform.rotation, scale: { ...e.transform.scale },
+      sprite: (() => { const s = e.get(Engine.SpriteRenderer); return s && { color: s.color, width: s.width, height: s.height, shape: s.shape, opacity: s.opacity, visible: s.visible, sortingLayer: s.sortingLayer, image: s.image, imageName: s.imageName }; })(),
+      animator: (() => { const a = e.get(Engine.Animator); return a && { clips: a.clips, current: a.current, playing: a.playing, time: a.time }; })(),
+      rb: (() => { const rb = e.get(Engine.Rigidbody2D); return rb && { bodyType: rb.bodyType, gravityScale: rb.gravityScale, restitution: rb.restitution, useGravity: rb.useGravity, velocity: { ...rb.velocity } }; })(),
+      col: (() => { const c = e.get(Engine.BoxCollider2D); return c && { size: { ...c.size }, isTrigger: c.isTrigger }; })(),
+      particle: (() => { const p = e.get(Engine.ParticleEmitter); return p && { rate: p.rate, life: p.life, speed: p.speed, gravity: p.gravity, size: p.size, color: p.color }; })(),
+      script: (() => { const s = e.get(Engine.ScriptComponent); return s && { language: s.language, source: s.source, graph: s.graph, enabled: s.enabled }; })(),
+    })),
+  };
+}
+function sceneFromJSON(d) {
+  const scn = new Engine.Scene(d.name); scn.nextId = d.nextId;
+  const map = new Map();
+  for (const q of d.entities) {
+    const e = new Engine.Entity(q.id, q.name); e.active = q.active; e.tag = q.tag;
+    e.transform.position = { ...q.transform }; e.transform.rotation = q.rotation; e.transform.scale = { ...q.scale };
+    const sp = e.get(Engine.SpriteRenderer); if (q.sprite) Object.assign(sp, q.sprite);
+    if (q.animator) { const a = e.add(Object.assign(new Engine.Animator(), q.animator)); patchClipApply(a); }
+    if (q.rb) e.add(Object.assign(new Engine.Rigidbody2D(), q.rb));
+    if (q.col) e.add(Object.assign(new Engine.BoxCollider2D(), q.col));
+    if (q.particle) e.add(Object.assign(new Engine.ParticleEmitter(), q.particle));
+    if (q.script) e.add(Object.assign(new Engine.ScriptComponent(), q.script));
+    scn.entities.push(e); map.set(e.id, e);
+  }
+  for (const q of d.entities) if (q.parent) { const e = map.get(q.id), p = map.get(q.parent); if (e && p) { e.parent = p; p.children.push(e); } }
+  return scn;
+}
+function hydrateSpriteImages(scene) {
+  for (const e of scene.entities) { const s = e.get(Engine.SpriteRenderer); if (s && s.image && typeof s.image === "string") { const img = new Image(); img.src = s.image; s.image = { src: img.src, _img: img }; } }
+}
+
+// ------------------------------------------------------------- DEMO DATA ---
+const LUNARSCRIPT_DEMO = `// Move with arrow keys, jump with Space.
+on start {
+  print("Player ready! Arrow keys to move, Space to jump.");
+}
+
+on update(dt) {
+  if (input.key("ArrowLeft")) {
+    self.velX = -180;
+  } else if (input.key("ArrowRight")) {
+    self.velX = 180;
+  } else {
+    self.velX = self.velX * 0.85;
+  }
+  if (input.key("Space") && self.velY < 15 && self.velY > -15) {
+    self.velY = -270;
+  }
+}
+
+on collision(other) {
+  print("Touched " + other.name);
+}
+`;
+
+function demoBlueprintGraph() {
+  return {
+    nodes: [
+      { id: "ev", type: "Event/OnUpdate", x: 40, y: 40, data: {} },
+      { id: "keyL", type: "Value/KeyDown", x: 40, y: 160, data: { key: "ArrowLeft" } },
+      { id: "keyR", type: "Value/KeyDown", x: 40, y: 260, data: { key: "ArrowRight" } },
+      { id: "ifL", type: "Flow/If", x: 260, y: 40, data: {} },
+      { id: "ifR", type: "Flow/If", x: 480, y: 40, data: {} },
+      { id: "negSpeed", type: "Value/Number", x: 260, y: 200, data: { value: -3 } },
+      { id: "posSpeed", type: "Value/Number", x: 480, y: 200, data: { value: 3 } },
+      { id: "moveL", type: "Action/MoveBy", x: 260, y: 320, data: {} },
+      { id: "moveR", type: "Action/MoveBy", x: 480, y: 320, data: {} },
+    ],
+    links: [
+      { kind: "exec", from: "ev", fromPort: "out", to: "ifL", toPort: "in" },
+      { kind: "data", from: "keyL", fromPort: "value", to: "ifL", toPort: "cond" },
+      { kind: "exec", from: "ifL", fromPort: "true", to: "moveL", toPort: "in" },
+      { kind: "data", from: "negSpeed", fromPort: "value", to: "moveL", toPort: "dx" },
+      { kind: "exec", from: "ifL", fromPort: "false", to: "ifR", toPort: "in" },
+      { kind: "data", from: "keyR", fromPort: "value", to: "ifR", toPort: "cond" },
+      { kind: "exec", from: "ifR", fromPort: "true", to: "moveR", toPort: "in" },
+      { kind: "data", from: "posSpeed", fromPort: "value", to: "moveR", toPort: "dx" },
+    ],
+  };
+}
+
+function makeDemo(name = "Untitled Project", language = "lunarscript") {
+  state.projectName = name || "Untitled Project";
+  state.projectLanguage = language;
+  state.editScene = new Engine.Scene("Main Scene");
+  state.images = [];
+
+  const p = state.editScene.create("Player");
+  p.transform.position = { x: -150, y: -100 };
+  p.get(Engine.SpriteRenderer).shape = "circle";
+  p.add(new Engine.Rigidbody2D());
+  p.add(new Engine.BoxCollider2D());
+  const script = p.add(new Engine.ScriptComponent());
+  script.language = language;
+  if (language === "blueprint") script.graph = demoBlueprintGraph();
+  else script.source = LUNARSCRIPT_DEMO;
+
+  const g = state.editScene.create("Ground");
+  g.transform.position = { x: 0, y: 170 };
+  Object.assign(g.get(Engine.SpriteRenderer), { color: "#454b58", width: 720, height: 50 });
+  g.add(new Engine.Rigidbody2D()).bodyType = "Static";
+  g.add(Object.assign(new Engine.BoxCollider2D(), { size: { x: 720, y: 50 } }));
+
+  const pl = state.editScene.create("Platform");
+  pl.transform.position = { x: 120, y: 25 };
+  Object.assign(pl.get(Engine.SpriteRenderer), { color: "#596273", width: 220, height: 30 });
+  pl.add(new Engine.Rigidbody2D()).bodyType = "Static";
+  pl.add(Object.assign(new Engine.BoxCollider2D(), { size: { x: 220, y: 30 } }));
+
+  const em = state.editScene.create("Particles");
+  em.transform.position = { x: 240, y: -100 };
+  em.get(Engine.SpriteRenderer).visible = false;
+  em.add(Object.assign(new Engine.ParticleEmitter(), { rate: 18 }));
+
+  state.selected = p; state.cam = { x: 0, y: 0 };
+  log(`Lunar Engine v0.6.0 • scripting: ${language === "blueprint" ? "Blueprints" : "LunarScript"}`);
+  log("Created project: " + state.projectName);
+  refresh();
+}
+
+// -------------------------------------------------------- HIERARCHY/ASSETS-
+function addChild(e, parent) {
+  if (e.parent) e.parent.children = e.parent.children.filter(x => x !== e);
+  e.parent = parent || null;
+  if (parent && !parent.children.includes(e)) parent.children.push(e);
+}
+function createObject() {
+  const parent = state.selected || null;
+  const e = state.editScene.create("GameObject");
+  if (parent) addChild(e, parent);
+  state.selected = e; log("Created " + e.name + (parent ? " under " + parent.name : "")); refresh();
+}
+function hierarchyItems() {
+  const out = [];
+  function walk(e, depth) {
+    out.push(`<div class="item ${e === state.selected ? "selected" : ""}" data-id="${e.id}" style="padding-left:${8 + depth * 16}px">${e.get(Engine.ScriptComponent) ? "📜" : "◇"} ${esc(e.name)}</div>`);
+    for (const c of e.children) walk(c, depth + 1);
+  }
+  state.editScene.entities.filter(e => !e.parent).forEach(e => walk(e, 0));
+  return out.join("") || '<div class="hint">No objects. Click ＋ Object to create one.</div>';
+}
+function importSpriteFiles(files) {
+  [...files].forEach(file => {
+    const rr = new FileReader();
+    rr.onload = () => {
+      const img = new Image();
+      img.onload = () => {
+        const asset = { name: file.name, data: rr.result, width: img.naturalWidth, height: img.naturalHeight };
+        state.images.push(asset);
+        if (state.selected) { const s = state.selected.get(Engine.SpriteRenderer); if (s) { s.image = asset.data; s.imageName = asset.name; s.width = asset.width; s.height = asset.height; } }
+        log("Imported sprite: " + file.name); refresh();
+      };
+      img.src = rr.result;
+    };
+    rr.readAsDataURL(file);
+  });
+}
+function makeSelectedSprite() {
+  const e = state.selected; if (!e) { log("Select an object first", "warn"); return; }
+  const s = e.get(Engine.SpriteRenderer); if (!s) { log("Selected object has no Sprite Renderer", "warn"); return; }
+  const w = Math.max(1, Math.round(s.width)), h = Math.max(1, Math.round(s.height));
+  const cv = document.createElement("canvas"); cv.width = w; cv.height = h;
+  const x = cv.getContext("2d"); x.clearRect(0, 0, w, h); x.translate(w / 2, h / 2); x.fillStyle = s.color; x.globalAlpha = s.opacity;
+  if (s.shape === "circle") { x.beginPath(); x.arc(0, 0, w / 2, 0, Math.PI * 2); x.fill(); } else x.fillRect(-w / 2, -h / 2, w, h);
+  const data = cv.toDataURL("image/png"); const name = e.name + "_sprite.png";
+  s.image = data; s.imageName = name; state.images.push({ name, data, width: w, height: h });
+  log("Converted " + e.name + " into sprite " + name); refresh();
+}
+function renderAssets() {
+  const box = document.getElementById("assets");
+  box.innerHTML = state.images.map((im, i) => `<div class="asset imageAsset" data-image="${i}" title="Assign sprite to selected object"><img src="${im.data}" style="width:36px;height:36px;object-fit:contain;display:block;margin:auto"><span>${esc(im.name)}</span></div>`).join("")
+    || '<div class="hint">No sprites imported yet.</div>';
+  box.querySelectorAll(".imageAsset").forEach(x => x.onclick = () => {
+    const e = state.selected; if (!e) return;
+    const im = state.images[+x.dataset.image], s = e.get(Engine.SpriteRenderer);
+    if (s) { s.image = im.data; s.imageName = im.name; s.width = im.width; s.height = im.height; refresh(); log("Assigned sprite " + im.name + " to " + e.name); }
+  });
+}
+
+// --------------------------------------------------------------- ANIMATOR --
+function openAnimator() {
+  const e = state.selected; if (!e) { log("Select an object to animate", "warn"); return; }
+  let a = e.get(Engine.Animator); if (!a) { a = e.add(new Engine.Animator()); }
+  patchClipApply(a);
+  const names = Object.keys(a.clips); let current = a.current || names[0] || "Idle";
+  if (!a.clips[current]) a.clips[current] = { name: current, duration: 1, loop: true, tracks: {} };
+  patchClipApply(a);
+  document.getElementById("modal").innerHTML = `<div class="modal"><div class="box wide"><h2>Animation: ${esc(e.name)}</h2>
+  <div class="hint">Create keyframes at the current time. Position, rotation, scale and sprite opacity are keyed together.</div>
+  <div style="display:grid;grid-template-columns:180px 1fr;gap:8px">
+  <div><button id="newClip" style="width:100%">＋ New Clip</button><div id="clipList" style="margin-top:6px"></div></div>
+  <div><label>Clip <input id="clipName" value="${esc(current)}"></label> <label>Duration <input id="clipDuration" type="number" step=".1" min=".1" value="${a.clips[current].duration || 1}" style="width:80px"></label> <label><input id="clipLoop" type="checkbox" ${a.clips[current].loop !== false ? "checked" : ""}> Loop</label>
+  <div style="margin:12px 0"><label>Time <input id="animTime" type="range" min="0" max="${Math.max(0.1, a.clips[current].duration || 1)}" step=".01" value="${a.time || 0}" style="width:65%"></label><span id="timeRead">${(a.time || 0).toFixed(2)}s</span></div>
+  <button id="addKey" class="active">＋ Add Keyframe</button> <button id="playAnim">▶ Play</button> <button id="stopAnim">■ Stop</button>
+  <div class="hint" id="trackInfo"></div></div></div>
+  <div style="text-align:right;margin-top:10px"><button id="closeAnim">Close</button></div></div></div>`;
+  const list = document.getElementById("clipList"), cn = document.getElementById("clipName"), dur = document.getElementById("clipDuration"), loop = document.getElementById("clipLoop"), range = document.getElementById("animTime"), read = document.getElementById("timeRead"), info = document.getElementById("trackInfo");
+  function loadClip() { const c = a.clips[current]; cn.value = current; dur.value = c.duration || 1; loop.checked = c.loop !== false; range.max = Math.max(0.1, c.duration || 1); range.value = a.time || 0; read.textContent = (+range.value).toFixed(2) + "s"; const tracks = Object.entries(c.tracks || {}).map(([k, v]) => k + ":" + v.length).join(" • "); info.textContent = tracks || "No keyframes yet."; }
+  function renderClips() { list.innerHTML = Object.keys(a.clips).map(n => `<div class="item ${n === current ? "selected" : ""}" data-clip="${esc(n)}">🎞 ${esc(n)}</div>`).join(""); list.querySelectorAll(".item").forEach(el => el.onclick = () => { current = el.dataset.clip; a.current = current; a.time = 0; loadClip(); renderClips(); }); }
+  document.getElementById("newClip").onclick = () => { let n = "Clip" + (Object.keys(a.clips).length + 1); while (a.clips[n]) n += "x"; a.clips[n] = { name: n, duration: 1, loop: true, tracks: {} }; current = n; a.current = n; a.time = 0; loadClip(); renderClips(); };
+  cn.onchange = () => { const n = cn.value.trim() || "Clip"; if (n !== current) { a.clips[n] = a.clips[current]; delete a.clips[current]; current = n; a.current = n; renderClips(); } a.clips[current].name = current; };
+  dur.onchange = () => { a.clips[current].duration = Math.max(0.1, +dur.value || 1); loadClip(); };
+  loop.onchange = () => a.clips[current].loop = loop.checked;
+  range.oninput = () => { a.time = +range.value; applyClipToEntity(e, a.clips[current], a.time); read.textContent = a.time.toFixed(2) + "s"; refresh(); };
+  document.getElementById("addKey").onclick = () => { a.time = +range.value; addKeyframe(e, a.clips[current], a.time); loadClip(); log("Added keyframe to " + current); };
+  document.getElementById("playAnim").onclick = () => a.play(current);
+  document.getElementById("stopAnim").onclick = () => a.stop();
+  document.getElementById("closeAnim").onclick = closeModal; renderClips(); loadClip();
+}
+
+// ---------------------------------------------------------- CODE EDITOR ----
+function openCodeEditor(entity, script) {
+  document.getElementById("modal").innerHTML = `<div class="modal"><div class="box wide">
+    <h2>LunarScript — ${esc(entity.name)}</h2>
+    <div class="hint">Events: <b>on start { }</b>, <b>on update(dt) { }</b>, <b>on collision(other) { }</b>. API: self.x/y/rot/scaleX/scaleY/velX/velY/color/visible/width/height/name/tag/active, self.destroy(), self.playAnimation(name), input.key("ArrowRight"), time.dt, math.*, print(...), random(a,b), spawn(name), findByName(name).</div>
+    <textarea id="codeSrc" class="codeBox" spellcheck="false">${esc(script.source)}</textarea>
+    <div id="codeStatus" class="hint"></div>
+    <div style="text-align:right;margin-top:8px"><button id="closeCode">Close</button> <button id="testCode">Test Compile</button> <button id="saveCode" class="active">Save</button></div>
+  </div></div>`;
+  const box = document.getElementById("codeSrc"), status = document.getElementById("codeStatus");
+  function test() {
+    try {
+      const fakeSelf = { x: 0, y: 0, rot: 0, scaleX: 1, scaleY: 1, velX: 0, velY: 0, color: "#fff", visible: true, width: 1, height: 1, name: entity.name, tag: entity.tag, active: true, destroy() {}, playAnimation() {} };
+      const prog = LunarScript.compile(box.value, { self: fakeSelf, input: { key: () => false }, print: () => {} });
+      const events = ["start", "update", "collision"].filter(n => prog.hasEvent(n));
+      status.innerHTML = `<span style="color:#7fe0a8">✓ Compiles OK</span> — events found: ${events.join(", ") || "none"}`;
+    } catch (err) { status.innerHTML = `<span class="errText">✗ ${esc(err.message)}</span>`; }
+  }
+  document.getElementById("testCode").onclick = test;
+  document.getElementById("saveCode").onclick = () => { script.source = box.value; script._compiled = null; script._error = null; log("Saved LunarScript for " + entity.name); test(); refresh(); };
+  document.getElementById("closeCode").onclick = closeModal;
+  test();
+}
+
+// ------------------------------------------------------ BLUEPRINT EDITOR ---
+function openBlueprintEditor(entity, script) {
+  const graph = script.graph = script.graph || { nodes: [], links: [] };
+  const defs = LunarBlueprint.BP_NODE_DEFS;
+  const cam = { x: 0, y: 0, zoom: 1 };
+  let selectedNode = null, selectedLink = null, dragNode = null, dragPan = null, dragLink = null, nextNodeId = 1;
+
+  document.getElementById("modal").innerHTML = `<div class="modal"><div class="box wide">
+    <h2>Blueprints — ${esc(entity.name)}</h2>
+    <div class="bpWrap">
+      <div class="bpPalette" id="bpPalette"></div>
+      <div class="bpCanvasWrap"><canvas id="bpCanvas"></canvas></div>
+      <div class="bpInspector" id="bpInspector"><div class="hint">Click a node to edit its fields. Drag from an output dot to an input dot to connect. Select a node or link and press Delete to remove it.</div></div>
+    </div>
+    <div style="text-align:right;margin-top:8px"><button id="closeBp">Close</button> <button id="saveBp" class="active">Save</button></div>
+  </div></div>`;
+
+  const palette = document.getElementById("bpPalette");
+  const groups = { event: "Events", flow: "Flow", action: "Actions", value: "Values" };
+  let paletteHtml = "";
+  for (const cat of Object.keys(groups)) {
+    paletteHtml += `<div class="cat">${groups[cat]}</div>`;
+    for (const type of Object.keys(defs)) if (defs[type].category === cat) paletteHtml += `<button data-add="${type}">${type.split("/")[1]}</button>`;
+  }
+  palette.innerHTML = paletteHtml;
+
+  const cv = document.getElementById("bpCanvas"), ctx = cv.getContext("2d");
+  function resizeCanvas() { const rect = cv.parentElement.getBoundingClientRect(); const d = devicePixelRatio || 1; cv.width = rect.width * d; cv.height = rect.height * d; ctx.setTransform(d, 0, 0, d, 0, 0); cv.style.width = rect.width + "px"; cv.style.height = rect.height + "px"; cv._w = rect.width; cv._h = rect.height; draw(); }
+
+  function portsOf(node) {
+    const def = defs[node.type]; if (!def) return { inputs: [], outputs: [] };
+    const inputs = []; if (def.execIn) inputs.push({ name: "in", kind: "exec" }); for (const p of def.dataIn || []) inputs.push({ name: p, kind: "data" });
+    const outputs = []; for (const p of def.execOut || []) outputs.push({ name: p, kind: "exec" }); for (const p of def.dataOut || []) outputs.push({ name: p, kind: "data" });
+    return { inputs, outputs };
+  }
+  function nodeSize(node) { const { inputs, outputs } = portsOf(node); const rows = Math.max(inputs.length, outputs.length, 1); return { w: 150, h: 26 + rows * 18 + 6 }; }
+  function toScreen(x, y) { return { x: (x + cam.x) * cam.zoom, y: (y + cam.y) * cam.zoom }; }
+  function toWorld(x, y) { return { x: x / cam.zoom - cam.x, y: y / cam.zoom - cam.y }; }
+  function portPos(node, index, side) { const { w, h } = nodeSize(node); const { inputs, outputs } = portsOf(node); const list = side === "in" ? inputs : outputs; const rowH = (h - 26) / Math.max(1, list.length); const py = node.y + 26 + rowH * index + rowH / 2; const px = side === "in" ? node.x : node.x + w; return toScreen(px, py); }
+
+  function draw() {
+    ctx.clearRect(0, 0, cv._w, cv._h);
+    ctx.fillStyle = "#0b0d11"; ctx.fillRect(0, 0, cv._w, cv._h);
+    // links
+    for (const link of graph.links) {
+      const fn = graph.nodes.find(n => n.id === link.from), tn = graph.nodes.find(n => n.id === link.to);
+      if (!fn || !tn) continue;
+      const fp = portsOf(fn), tp = portsOf(tn);
+      const fi = fp.outputs.findIndex(p => p.name === link.fromPort), ti = tp.inputs.findIndex(p => p.name === link.toPort);
+      if (fi < 0 || ti < 0) continue;
+      const a = portPos(fn, fi, "out"), b = portPos(tn, ti, "in");
+      ctx.strokeStyle = link === selectedLink ? "#ffffff" : (link.kind === "exec" ? "#e5c96a" : "#7fbfff");
+      ctx.lineWidth = link === selectedLink ? 3 : 2;
+      ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.bezierCurveTo(a.x + 40, a.y, b.x - 40, b.y, b.x, b.y); ctx.stroke();
+    }
+    if (dragLink) {
+      ctx.strokeStyle = "#aaa"; ctx.lineWidth = 2; ctx.setLineDash([4, 3]);
+      ctx.beginPath(); ctx.moveTo(dragLink.from.x, dragLink.from.y); ctx.lineTo(dragLink.to.x, dragLink.to.y); ctx.stroke(); ctx.setLineDash([]);
+    }
+    // nodes
+    for (const node of graph.nodes) {
+      const { w, h } = nodeSize(node); const p = toScreen(node.x, node.y);
+      const def = defs[node.type] || {};
+      const catColor = { event: "#8a5cff", flow: "#c98a3a", action: "#3aa06e", value: "#3a7fc9" }[def.category] || "#555";
+      ctx.fillStyle = "#171a20"; ctx.strokeStyle = node === selectedNode ? "#ffffff" : "#363c49"; ctx.lineWidth = node === selectedNode ? 2 : 1;
+      ctx.beginPath(); ctx.roundRect(p.x, p.y, w * cam.zoom, h * cam.zoom, 6); ctx.fill(); ctx.stroke();
+      ctx.fillStyle = catColor; ctx.beginPath(); ctx.roundRect(p.x, p.y, w * cam.zoom, 20 * cam.zoom, 6); ctx.fill();
+      ctx.fillStyle = "#fff"; ctx.font = `${11 * cam.zoom}px Segoe UI`; ctx.fillText(node.type.split("/")[1], p.x + 6, p.y + 14 * cam.zoom);
+      const { inputs, outputs } = portsOf(node);
+      inputs.forEach((port, i) => { const pp = portPos(node, i, "in"); ctx.fillStyle = port.kind === "exec" ? "#e5c96a" : "#7fbfff"; ctx.beginPath(); ctx.arc(pp.x, pp.y, 4, 0, Math.PI * 2); ctx.fill(); ctx.fillStyle = "#ccc"; ctx.font = `${9 * cam.zoom}px Segoe UI`; ctx.fillText(port.name, pp.x + 7, pp.y + 3); });
+      outputs.forEach((port, i) => { const pp = portPos(node, i, "out"); ctx.fillStyle = port.kind === "exec" ? "#e5c96a" : "#7fbfff"; ctx.beginPath(); ctx.arc(pp.x, pp.y, 4, 0, Math.PI * 2); ctx.fill(); ctx.fillStyle = "#ccc"; ctx.font = `${9 * cam.zoom}px Segoe UI`; const tw = ctx.measureText(port.name).width; ctx.fillText(port.name, pp.x - 7 - tw, pp.y + 3); });
+    }
+  }
+
+  function hitNode(wx, wy) {
+    for (let i = graph.nodes.length - 1; i >= 0; i--) { const n = graph.nodes[i]; const { w, h } = nodeSize(n); if (wx >= n.x && wx <= n.x + w && wy >= n.y && wy <= n.y + h) return n; }
+    return null;
+  }
+  function hitPort(sx, sy) {
+    const R = 7;
+    for (const node of graph.nodes) {
+      const { inputs, outputs } = portsOf(node);
+      for (let i = 0; i < inputs.length; i++) { const p = portPos(node, i, "in"); if (Math.hypot(p.x - sx, p.y - sy) < R) return { node, index: i, side: "in", port: inputs[i] }; }
+      for (let i = 0; i < outputs.length; i++) { const p = portPos(node, i, "out"); if (Math.hypot(p.x - sx, p.y - sy) < R) return { node, index: i, side: "out", port: outputs[i] }; }
+    }
+    return null;
+  }
+  function hitLink(sx, sy) {
+    for (const link of graph.links) {
+      const fn = graph.nodes.find(n => n.id === link.from), tn = graph.nodes.find(n => n.id === link.to); if (!fn || !tn) continue;
+      const fp = portsOf(fn), tp = portsOf(tn);
+      const fi = fp.outputs.findIndex(p => p.name === link.fromPort), ti = tp.inputs.findIndex(p => p.name === link.toPort); if (fi < 0 || ti < 0) continue;
+      const a = portPos(fn, fi, "out"), b = portPos(tn, ti, "in");
+      for (let t = 0; t <= 1; t += 0.05) { const x = a.x + (b.x - a.x) * t, y = a.y + (b.y - a.y) * t; if (Math.hypot(x - sx, y - sy) < 6) return link; }
+    }
+    return null;
+  }
+
+  function renderInspector() {
+    const box = document.getElementById("bpInspector");
+    if (!selectedNode) { box.innerHTML = '<div class="hint">Click a node to edit its fields. Drag from an output dot to an input dot to connect. Select a node or link and press Delete to remove it.</div>'; return; }
+    const node = selectedNode, def = defs[node.type] || {};
+    let html = `<div class="hint"><b>${esc(node.type)}</b></div>`;
+    if (node.type === "Value/Compare") html += field("Operator", `<select data-bp="op">${["==", "!=", "<", ">", "<=", ">="].map(o => `<option ${node.data.op === o ? "selected" : ""}>${o}</option>`).join("")}</select>`);
+    if (node.type === "Value/Math") html += field("Operator", `<select data-bp="op">${["+", "-", "*", "/"].map(o => `<option ${node.data.op === o ? "selected" : ""}>${o}</option>`).join("")}</select>`);
+    if (node.type === "Value/Bool") html += `<label class="check"><input type="checkbox" data-bp="value" ${node.data.value ? "checked" : ""}> value</label>`;
+    for (const p of def.dataIn || []) { if (node.type === "Value/Compare" && p === "op") continue; html += field(p, `<input data-bp="${p}" value="${esc(node.data[p] ?? "")}">`); }
+    html += `<button id="deleteNode" class="danger" style="width:100%;margin-top:8px">Delete Node</button>`;
+    box.innerHTML = html;
+    box.querySelectorAll("[data-bp]").forEach(el => el.onchange = () => { const key = el.dataset.bp; node.data[key] = el.type === "checkbox" ? el.checked : el.value; draw(); });
+    document.getElementById("deleteNode").onclick = () => { graph.nodes = graph.nodes.filter(n => n !== node); graph.links = graph.links.filter(l => l.from !== node.id && l.to !== node.id); selectedNode = null; renderInspector(); draw(); };
+  }
+
+  palette.querySelectorAll("[data-add]").forEach(btn => btn.onclick = () => {
+    const type = btn.dataset.add;
+    graph.nodes.push({ id: "n" + (nextNodeId++) + "_" + Date.now().toString(36), type, x: 40 - cam.x + 20, y: 40 - cam.y + 20, data: {} });
+    draw();
+  });
+
+  cv.addEventListener("contextmenu", e => e.preventDefault());
+  cv.addEventListener("wheel", e => { e.preventDefault(); const rect = cv.getBoundingClientRect(); cam.zoom = Math.max(0.4, Math.min(2, cam.zoom * (e.deltaY > 0 ? 0.9 : 1.1))); draw(); });
+  cv.addEventListener("pointerdown", e => {
+    const rect = cv.getBoundingClientRect(); const sx = e.clientX - rect.left, sy = e.clientY - rect.top;
+    const port = hitPort(sx, sy);
+    if (port && port.side === "out") { dragLink = { fromNode: port.node, fromPort: port.port.name, kind: port.port.kind, from: { x: sx, y: sy }, to: { x: sx, y: sy } }; return; }
+    if (port && port.side === "in") {
+      const existing = graph.links.find(l => l.to === port.node.id && l.toPort === port.port.name);
+      if (existing) { const fn = graph.nodes.find(n => n.id === existing.from); const fi = portsOf(fn).outputs.findIndex(p => p.name === existing.fromPort); const fp = portPos(fn, fi, "out"); graph.links = graph.links.filter(l => l !== existing); dragLink = { fromNode: fn, fromPort: existing.fromPort, kind: existing.kind, from: fp, to: { x: sx, y: sy } }; }
+      return;
+    }
+    const world = toWorld(sx, sy); const node = hitNode(world.x, world.y);
+    if (node) { selectedNode = node; selectedLink = null; dragNode = { node, offX: world.x - node.x, offY: world.y - node.y }; renderInspector(); draw(); return; }
+    const link = hitLink(sx, sy);
+    if (link) { selectedLink = link; selectedNode = null; renderInspector(); draw(); return; }
+    selectedNode = null; selectedLink = null; renderInspector(); dragPan = { x: e.clientX, y: e.clientY, cx: cam.x, cy: cam.y }; draw();
+  });
+  cv.addEventListener("pointermove", e => {
+    const rect = cv.getBoundingClientRect(); const sx = e.clientX - rect.left, sy = e.clientY - rect.top;
+    if (dragLink) { dragLink.to = { x: sx, y: sy }; draw(); return; }
+    if (dragNode) { const world = toWorld(sx, sy); dragNode.node.x = world.x - dragNode.offX; dragNode.node.y = world.y - dragNode.offY; draw(); return; }
+    if (dragPan) { cam.x = dragPan.cx + (e.clientX - dragPan.x) / cam.zoom; cam.y = dragPan.cy + (e.clientY - dragPan.y) / cam.zoom; draw(); }
+  });
+  addEventListener("pointerup", e => {
+    if (dragLink) {
+      const rect = cv.getBoundingClientRect(); const sx = e.clientX - rect.left, sy = e.clientY - rect.top;
+      const target = hitPort(sx, sy);
+      if (target && target.side === "in" && target.port.kind === dragLink.kind && target.node !== dragLink.fromNode) {
+        graph.links = graph.links.filter(l => !(l.to === target.node.id && l.toPort === target.port.name));
+        graph.links.push({ kind: dragLink.kind, from: dragLink.fromNode.id, fromPort: dragLink.fromPort, to: target.node.id, toPort: target.port.name });
+      }
+      dragLink = null; draw();
+    }
+    dragNode = null; dragPan = null;
+  });
+  document.addEventListener("keydown", function delKey(e) {
+    if (!document.getElementById("bpCanvas")) { document.removeEventListener("keydown", delKey); return; }
+    if (e.key === "Delete" || e.key === "Backspace") {
+      if (document.activeElement && ["INPUT", "TEXTAREA", "SELECT"].includes(document.activeElement.tagName)) return;
+      if (selectedNode) { graph.nodes = graph.nodes.filter(n => n !== selectedNode); graph.links = graph.links.filter(l => l.from !== selectedNode.id && l.to !== selectedNode.id); selectedNode = null; renderInspector(); draw(); }
+      else if (selectedLink) { graph.links = graph.links.filter(l => l !== selectedLink); selectedLink = null; draw(); }
+    }
+  });
+
+  document.getElementById("saveBp").onclick = () => { script.graph = graph; script._compiled = null; script._error = null; log("Saved Blueprint for " + entity.name); refresh(); };
+  document.getElementById("closeBp").onclick = closeModal;
+  requestAnimationFrame(() => { resizeCanvas(); });
+  window.addEventListener("resize", resizeCanvas);
+}
+
+// ------------------------------------------------------------ INSPECTOR ----
+function inspect() {
+  const box = document.getElementById("inspector"), e = state.selected;
+  if (!e) { box.innerHTML = '<div class="hint">Select an entity.</div>'; return; }
+  const t = e.transform, s = e.get(Engine.SpriteRenderer), rb = e.get(Engine.Rigidbody2D), c = e.get(Engine.BoxCollider2D), p = e.get(Engine.ParticleEmitter), script = e.get(Engine.ScriptComponent);
+  const parentOptions = `<option value="">None (Root)</option>` + state.editScene.entities.filter(x => x !== e && !isDescendant(x, e)).map(x => `<option value="${x.id}" ${e.parent === x ? "selected" : ""}>${esc(x.name)}</option>`).join("");
+  let h = `<div class="section"><div class="head">GameObject</div>${field("Name", `<input data-p="name" value="${esc(e.name)}">`)}${field("Tag", `<input data-p="tag" value="${esc(e.tag)}">`)}${field("Parent", `<select data-p="parent">${parentOptions}</select>`)}<label class="check"><input type="checkbox" data-p="active" ${e.active ? "checked" : ""}> Active</label></div>`;
+  h += `<div class="section"><div class="head">Transform</div>${field("Position", `<div class="xy"><input data-p="px" value="${t.position.x}"><input data-p="py" value="${t.position.y}"></div>`)}${field("Rotation", `<input data-p="rot" value="${t.rotation * 180 / Math.PI}">`)}${field("Scale", `<div class="xy"><input data-p="sx" value="${t.scale.x}"><input data-p="sy" value="${t.scale.y}"></div>`)}</div>`;
+  if (s) h += `<div class="section"><div class="head">Sprite Renderer</div>${field("Sprite", `<div><b>${esc(s.imageName || "None")}</b><br><button id="inspectorSprite">Choose / Upload</button></div>`)}${field("Color", `<input type="color" data-p="color" value="${s.color}">`)}${field("Width", `<input type="number" data-p="width" value="${s.width}">`)}${field("Height", `<input type="number" data-p="height" value="${s.height}">`)}${field("Shape", `<select data-p="shape"><option ${s.shape === "box" ? "selected" : ""}>box</option><option ${s.shape === "circle" ? "selected" : ""}>circle</option></select>`)}</div>`;
+  if (rb) h += `<div class="section"><div class="head">Rigidbody 2D</div>${field("Body Type", `<select data-p="bodyType"><option ${rb.bodyType === "Dynamic" ? "selected" : ""}>Dynamic</option><option ${rb.bodyType === "Static" ? "selected" : ""}>Static</option><option ${rb.bodyType === "Kinematic" ? "selected" : ""}>Kinematic</option></select>`)}${field("Gravity", `<input type="number" step=".1" data-p="gravityScale" value="${rb.gravityScale}">`)}<label class="check"><input type="checkbox" data-p="useGravity" ${rb.useGravity ? "checked" : ""}> Use Gravity</label></div>`;
+  if (c) h += `<div class="section"><div class="head">Box Collider 2D</div>${field("Size", `<div class="xy"><input data-p="cx" value="${c.size.x}"><input data-p="cy" value="${c.size.y}"></div>`)}<label class="check"><input type="checkbox" data-p="trigger" ${c.isTrigger ? "checked" : ""}> Is Trigger</label></div>`;
+  if (p) h += `<div class="section"><div class="head">Particle Emitter</div>${field("Rate", `<input type="number" data-p="rate" value="${p.rate}">`)}${field("Lifetime", `<input type="number" data-p="life" value="${p.life}">`)}${field("Speed", `<input type="number" data-p="speed" value="${p.speed}">`)}</div>`;
+  const an = e.get(Engine.Animator);
+  if (an) { const clips = Object.keys(an.clips); h += `<div class="section"><div class="head">Animator</div>${field("Clip", `<select data-p="animClip">${clips.map(n => `<option ${n === an.current ? "selected" : ""}>${esc(n)}</option>`).join("")}</select>`)}<label class="check"><input type="checkbox" data-p="animPlaying" ${an.playing ? "checked" : ""}> Playing</label><button id="editAnim" style="width:100%">Open Animation Editor</button></div>`; }
+  if (script) {
+    h += `<div class="section"><div class="head">Script<span style="font-weight:400;color:#8a91a3">${script._error ? " ⚠" : ""}</span></div>`
+      + field("Language", `<select data-p="scriptLang"><option value="lunarscript" ${script.language === "lunarscript" ? "selected" : ""}>LunarScript</option><option value="blueprint" ${script.language === "blueprint" ? "selected" : ""}>Blueprints</option></select>`)
+      + `<label class="check"><input type="checkbox" data-p="scriptEnabled" ${script.enabled ? "checked" : ""}> Enabled</label>`
+      + `<button id="openScriptEditor" style="width:100%">${script.language === "blueprint" ? "Open Blueprint Editor" : "Open Code Editor"}</button>`
+      + (script._error ? `<div class="errText">${esc(script._error)}</div>` : "")
+      + `<button id="removeScript" class="danger" style="width:100%;margin-top:4px">Remove Script</button></div>`;
+  }
+  h += `<button id="add" style="width:100%">＋ Add Component</button><button id="delete" class="danger" style="width:100%;margin-top:6px">Delete GameObject</button>`;
+  box.innerHTML = h;
+  box.querySelectorAll("input,select").forEach(x => x.onchange = () => apply(x));
+  const sb = document.getElementById("inspectorSprite"); if (sb) sb.onclick = () => document.getElementById("spriteFile").click();
+  const ea = document.getElementById("editAnim"); if (ea) ea.onclick = openAnimator;
+  const os = document.getElementById("openScriptEditor"); if (os) os.onclick = () => script.language === "blueprint" ? openBlueprintEditor(e, script) : openCodeEditor(e, script);
+  const rs = document.getElementById("removeScript"); if (rs) rs.onclick = () => { e.remove(script); log("Removed script from " + e.name); refresh(); };
+  document.getElementById("add").onclick = addComponent;
+  document.getElementById("delete").onclick = () => { state.editScene.entities = state.editScene.entities.filter(x => x !== e); state.selected = state.editScene.entities[0] || null; log("Deleted " + e.name, "warn"); refresh(); };
+}
+function apply(x) {
+  const e = state.selected; if (!e) return;
+  const v = x.type === "checkbox" ? x.checked : (x.type === "number" ? +x.value : x.value);
+  const d = x.dataset.p;
+  if (d === "name" || d === "tag" || d === "active") e[d] = v;
+  else if (d === "parent") { const par = v ? state.editScene.find(+v) : null; if (par && isDescendant(par, e)) return; addChild(e, par); }
+  else if (d === "animClip") { const a = e.get(Engine.Animator); if (a) a.current = v; }
+  else if (d === "animPlaying") { const a = e.get(Engine.Animator); if (a) a.playing = v; }
+  else if (d === "px" || d === "py") e.transform.position[d === "px" ? "x" : "y"] = +v;
+  else if (d === "rot") e.transform.rotation = (+v) * Math.PI / 180;
+  else if (d === "sx" || d === "sy") e.transform.scale[d === "sx" ? "x" : "y"] = +v;
+  else if (["color", "width", "height", "shape"].includes(d)) { const s = e.get(Engine.SpriteRenderer); if (s) s[d] = v; }
+  else if (["bodyType", "gravityScale", "useGravity"].includes(d)) { const b = e.get(Engine.Rigidbody2D); if (b) b[d] = v; }
+  else if (["cx", "cy", "trigger"].includes(d)) { const c = e.get(Engine.BoxCollider2D); if (c) { if (d === "cx") c.size.x = +v; if (d === "cy") c.size.y = +v; if (d === "trigger") c.isTrigger = v; } }
+  else if (["rate", "life", "speed"].includes(d)) { const p = e.get(Engine.ParticleEmitter); if (p) p[d] = +v; }
+  else if (d === "scriptLang") { const sc = e.get(Engine.ScriptComponent); if (sc) sc.language = v; }
+  else if (d === "scriptEnabled") { const sc = e.get(Engine.ScriptComponent); if (sc) sc.enabled = v; }
+  refresh();
+}
+function addComponent() {
+  const e = state.selected; if (!e) return;
+  const opts = ["Rigidbody 2D", "Box Collider 2D", "Particle Emitter", "Animator", "Script"];
+  document.getElementById("modal").innerHTML = `<div class="modal"><div class="box"><h2>Add Component</h2>${opts.map(o => `<button class="choice" data-c="${o}" style="display:block;width:100%;margin:5px 0">${o}</button>`).join("")}<button onclick="closeModal()" style="margin-top:8px">Close</button></div></div>`;
+  document.querySelectorAll(".choice").forEach(b => b.onclick = () => {
+    if (b.dataset.c === "Rigidbody 2D" && !e.get(Engine.Rigidbody2D)) e.add(new Engine.Rigidbody2D());
+    if (b.dataset.c === "Box Collider 2D" && !e.get(Engine.BoxCollider2D)) e.add(new Engine.BoxCollider2D());
+    if (b.dataset.c === "Particle Emitter" && !e.get(Engine.ParticleEmitter)) e.add(new Engine.ParticleEmitter());
+    if (b.dataset.c === "Animator" && !e.get(Engine.Animator)) e.add(new Engine.Animator());
+    if (b.dataset.c === "Script" && !e.get(Engine.ScriptComponent)) { const sc = e.add(new Engine.ScriptComponent()); sc.language = state.projectLanguage; if (sc.language === "blueprint") sc.graph = { nodes: [{ id: "ev1", type: "Event/OnStart", x: 40, y: 40, data: {} }], links: [] }; }
+    closeModal(); refresh();
+  });
+}
+
+// --------------------------------------------------------- SAVE / LOAD -----
+function sanitizeFileName(name) { return (name || "LunarGame").replace(/[<>:"/\\|?*\x00-\x1F]/g, "_").replace(/\s+/g, "_").slice(0, 80) || "LunarGame"; }
+function projectData() {
+  return JSON.stringify({
+    format: "LUNAGAME", formatVersion: 3, engine: "Lunar Engine", engineVersion: "0.6.0",
+    projectName: state.projectName, projectLanguage: state.projectLanguage,
+    images: state.images.map(x => ({ name: x.name, data: x.data, width: x.width, height: x.height })),
+    scene: sceneToJSON(state.editScene),
+  }, null, 2);
+}
+function save() {
+  const data = projectData(); localStorage.setItem("lunar-project", data);
+  const a = document.createElement("a"), u = URL.createObjectURL(new Blob([data], { type: "application/json" }));
+  a.href = u; a.download = "data.lunagame"; a.click(); URL.revokeObjectURL(u);
+  log("Saved data.lunagame");
+}
+function load() {
+  const i = document.createElement("input"); i.type = "file"; i.accept = ".lunagame,.json,application/json";
+  i.onchange = () => { const f = i.files[0], rr = new FileReader(); rr.onload = () => { try { loadProjectData(rr.result); log("Imported " + f.name); } catch (e) { log("Import failed: " + e.message, "err"); } }; rr.readAsText(f); };
+  i.click();
+}
+function loadProjectData(raw) {
+  const d = JSON.parse(raw);
+  state.projectName = d.projectName || "Untitled Project";
+  state.projectLanguage = d.projectLanguage || "lunarscript";
+  state.images = (d.images || []).map(x => ({ ...x }));
+  state.editScene = sceneFromJSON(d.scene);
+  for (const e of state.editScene.entities) { const a = e.get(Engine.Animator); if (a) patchClipApply(a); }
+  hydrateSpriteImages(state.editScene);
+  state.selected = state.editScene.entities[0] || null;
+  refresh();
+}
+function newProject() {
+  document.getElementById("modal").innerHTML = `<div class="modal"><div class="box">
+  <h2>Create Lunar Engine Project</h2>
+  <input id="projectInput" type="text" value="My Lunar Game" maxlength="80" autofocus>
+  <div class="hint">Pick how you'll script this project. You can still mix both later per-object.</div>
+  <div class="langChoice">
+    <div class="langCard picked" data-lang="lunarscript"><b>LunarScript</b><span>Real code — variables, functions, if/while/for, on start / on update / on collision. Fast once you know it.</span></div>
+    <div class="langCard" data-lang="blueprint"><b>Blueprints</b><span>Visual node graphs — wire Events, Actions and Logic together. No typing required.</span></div>
+  </div>
+  <div style="text-align:right"><button onclick="closeModal()">Cancel</button> <button id="createProject" class="active">Create Project</button></div>
+  </div></div>`;
+  let picked = "lunarscript";
+  document.querySelectorAll(".langCard").forEach(card => card.onclick = () => { picked = card.dataset.lang; document.querySelectorAll(".langCard").forEach(c => c.classList.toggle("picked", c === card)); });
+  const input = document.getElementById("projectInput");
+  document.getElementById("createProject").onclick = () => { const n = input.value.trim() || "My Lunar Game"; closeModal(); makeDemo(n, picked); };
+  input.onkeydown = e => { if (e.key === "Enter") document.getElementById("createProject").click(); };
+}
+function renameProject() {
+  document.getElementById("modal").innerHTML = `<div class="modal"><div class="box">
+  <h2>Project Name</h2>
+  <input id="renameInput" type="text" value="${esc(state.projectName)}" maxlength="80" autofocus>
+  <div style="text-align:right"><button onclick="closeModal()">Cancel</button> <button id="renameProjectBtn" class="active">Rename</button></div>
+  </div></div>`;
+  document.getElementById("renameProjectBtn").onclick = () => { state.projectName = document.getElementById("renameInput").value.trim() || "Untitled Project"; refresh(); closeModal(); log("Project renamed to " + state.projectName); };
+}
+
+// --------------------------------------------------- ZIP / BUILD (fallback)-
+function crc32(bytes) {
+  let table = crc32.table;
+  if (!table) { table = new Uint32Array(256); for (let n = 0; n < 256; n++) { let c = n; for (let k = 0; k < 8; k++) c = (c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1); table[n] = c >>> 0; } crc32.table = table; }
+  let c = 0xFFFFFFFF; for (const b of bytes) c = table[(c ^ b) & 255] ^ (c >>> 8); return (c ^ 0xFFFFFFFF) >>> 0;
+}
+function u16(a, n) { a.push(n & 255, (n >>> 8) & 255); }
+function u32(a, n) { a.push(n & 255, (n >>> 8) & 255, (n >>> 16) & 255, (n >>> 24) & 255); }
+function zipStored(files) {
+  const enc = new TextEncoder(), central = [], offsets = [], chunks = []; let offset = 0;
+  for (const f of files) {
+    const name = enc.encode(f.name), data = f.data instanceof Uint8Array ? f.data : enc.encode(f.data), crc = crc32(data);
+    offsets.push(offset);
+    const h = []; u32(h, 0x04034b50); u16(h, 20); u16(h, 0); u16(h, 0); u16(h, 0); u16(h, 0); u32(h, crc); u32(h, data.length); u32(h, data.length); u16(h, name.length); u16(h, 0);
+    const localPart = new Uint8Array(h.length + name.length + data.length); localPart.set(h); localPart.set(name, h.length); localPart.set(data, h.length + name.length); chunks.push(localPart); offset += localPart.length;
+    const c = []; u32(c, 0x02014b50); u16(c, 20); u16(c, 20); u16(c, 0); u16(c, 0); u16(c, 0); u16(c, 0); u32(c, crc); u32(c, data.length); u32(c, data.length); u16(c, name.length); u16(c, 0); u16(c, 0); u16(c, 0); u16(c, 0); u32(c, 0); u32(c, offsets[offsets.length - 1]); c.push(...name); central.push(new Uint8Array(c));
+  }
+  const centralOffset = offset; let centralSize = 0; for (const c of central) { chunks.push(c); centralSize += c.length; }
+  const end = []; u32(end, 0x06054b50); u16(end, 0); u16(end, 0); u16(end, files.length); u16(end, files.length); u32(end, centralSize); u32(end, centralOffset); u16(end, 0); chunks.push(new Uint8Array(end));
+  return new Blob(chunks, { type: "application/zip" });
+}
+function engineBundleSource() {
+  return document.getElementById("engine-lunarscript").textContent + "\n" + document.getElementById("engine-blueprint").textContent + "\n" + document.getElementById("engine-core").textContent;
+}
+function exportedRuntime() {
+  const proj = projectData();
+  return `<!doctype html><html><head><meta charset="utf-8"><title>${esc(state.projectName)}</title>
+<style>html,body{margin:0;height:100%;overflow:hidden;background:#111;color:white}canvas{width:100%;height:100%;display:block}</style></head><body><canvas id="game"></canvas>
+<script>${engineBundleSource()}<\/script>
+<script>
+const Engine = window.LunarEngineCore;
+const PROJECT = ${JSON.stringify(proj)};
+const P = JSON.parse(PROJECT);
+const IMAGES = {}; for (const im of P.images || []) { const img = new Image(); img.src = im.data; IMAGES[im.name] = img; }
+function sceneFromJSON(d){const scn=new Engine.Scene(d.name);scn.nextId=d.nextId;const map=new Map();for(const q of d.entities){const e=new Engine.Entity(q.id,q.name);e.active=q.active;e.tag=q.tag;e.transform.position={...q.transform};e.transform.rotation=q.rotation;e.transform.scale={...q.scale};const sp=e.get(Engine.SpriteRenderer);if(q.sprite)Object.assign(sp,q.sprite);if(sp&&sp.image&&IMAGES[sp.imageName])sp.image={_img:IMAGES[sp.imageName]};if(q.animator)e.add(Object.assign(new Engine.Animator(),q.animator));if(q.rb)e.add(Object.assign(new Engine.Rigidbody2D(),q.rb));if(q.col)e.add(Object.assign(new Engine.BoxCollider2D(),q.col));if(q.particle)e.add(Object.assign(new Engine.ParticleEmitter(),q.particle));if(q.script)e.add(Object.assign(new Engine.ScriptComponent(),q.script));scn.entities.push(e);map.set(e.id,e)}for(const q of d.entities)if(q.parent){const e=map.get(q.id),p=map.get(q.parent);if(e&&p){e.parent=p;p.children.push(e)}}return scn}
+const scene = sceneFromJSON(P.scene);
+const world = new Engine.World(scene, { onLog: (lvl, msg) => console.log("["+lvl+"]", msg) });
+world.begin();
+const canvas = document.getElementById("game"), ctx = canvas.getContext("2d");
+function resize(){canvas.width=innerWidth*devicePixelRatio;canvas.height=innerHeight*devicePixelRatio;ctx.setTransform(devicePixelRatio,0,0,devicePixelRatio,0,0)}
+addEventListener("resize", resize); resize();
+let last = performance.now();
+function frame(now){
+  const dt = Math.min(0.033, (now - last) / 1000); last = now;
+  world.step(dt);
+  ctx.fillStyle = "#0c0e12"; ctx.fillRect(0, 0, innerWidth, innerHeight);
+  ctx.save(); ctx.translate(innerWidth / 2, innerHeight / 2);
+  for (const e of scene.entities) {
+    if (!e.active) continue; const s = e.get(Engine.SpriteRenderer); if (!s || !s.visible) continue;
+    ctx.save(); ctx.translate(e.transform.position.x, e.transform.position.y); ctx.rotate(e.transform.rotation); ctx.scale(e.transform.scale.x, e.transform.scale.y); ctx.globalAlpha = s.opacity;
+    const im = s.image && s.image._img;
+    if (im && im.complete) ctx.drawImage(im, -s.width / 2, -s.height / 2, s.width, s.height);
+    else { ctx.fillStyle = s.color; if (s.shape === "circle") { ctx.beginPath(); ctx.arc(0, 0, s.width / 2, 0, Math.PI * 2); ctx.fill(); } else ctx.fillRect(-s.width / 2, -s.height / 2, s.width, s.height); }
+    ctx.restore();
+  }
+  ctx.restore();
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+<\/script></body></html>`;
+}
+function buildGamePackage() {
+  const runtime = exportedRuntime(); const proj = projectData();
+  if (window.lunarNative && typeof window.lunarNative.buildExe === "function") {
+    try {
+      log("Building native Windows EXE…");
+      const result = window.lunarNative.buildExe({ projectName: state.projectName, runtime, projectJson: proj });
+      if (result && result.ok) { log("BUILD COMPLETE: " + result.path); alert("Build complete!\n\n" + result.path); }
+      else { const msg = result?.error || "Native build failed."; log("BUILD ERROR: " + msg); alert(msg); }
+      return;
+    } catch (err) { log("Native build error: " + err.message); alert("Native EXE builder error: " + err.message); return; }
+  }
+  const files = [
+    { name: "game.html", data: runtime },
+    { name: "data.lunagame", data: proj },
+    { name: "README.txt", data: "Lunar Engine Native Build\n\nOpen this project in the Lunar Engine Desktop app (see the electron-app included in your download) and press Build to get a real installer.\n\nBrowser mode cannot create native Windows executables, but game.html is already a fully playable standalone game — open it in any browser.\n" },
+  ];
+  const a = document.createElement("a"); a.href = URL.createObjectURL(zipStored(files)); a.download = sanitizeFileName(state.projectName) + "_NativeBuild.zip"; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  log("Exported a playable game.html plus a native-builder package. Open the Lunar Engine desktop app to create a real installer.");
+}
+
+// ------------------------------------------------------------- MAIN LOOP ---
+function refresh() {
+  const hEl = document.getElementById("hierarchy");
+  hEl.innerHTML = hierarchyItems();
+  hEl.querySelectorAll(".item").forEach(x => x.onclick = () => { state.selected = state.editScene.find(+x.dataset.id); refresh(); });
+  document.getElementById("count").textContent = state.editScene.entities.length;
+  document.getElementById("projectName").textContent = state.projectName;
+  renderAssets();
+  inspect();
+}
+
+document.getElementById("new").onclick = newProject;
+document.getElementById("project").onclick = renameProject;
+document.getElementById("createObject").onclick = createObject;
+document.getElementById("save").onclick = save;
+document.getElementById("load").onclick = load;
+document.getElementById("build").onclick = buildGamePackage;
+document.getElementById("importSprite").onclick = () => document.getElementById("spriteFile").click();
+document.getElementById("makeSprite").onclick = makeSelectedSprite;
+document.getElementById("animate").onclick = openAnimator;
+document.getElementById("spriteFile").onchange = e => { importSpriteFiles(e.target.files); e.target.value = ""; };
+document.querySelectorAll("[data-tool]").forEach(b => b.onclick = () => { document.querySelectorAll("[data-tool]").forEach(x => x.classList.remove("active")); b.classList.add("active"); state.tool = b.dataset.tool; });
+document.getElementById("grid").onclick = () => { state.grid = !state.grid; document.getElementById("grid").classList.toggle("active", state.grid); };
+document.getElementById("snap").onclick = () => { state.snap = !state.snap; document.getElementById("snap").classList.toggle("active", state.snap); };
+
+document.getElementById("play").onclick = () => {
+  try {
+    const snapshot = sceneToJSON(state.editScene);
+    const playScene = sceneFromJSON(snapshot);
+    for (const e of playScene.entities) { const a = e.get(Engine.Animator); if (a) patchClipApply(a); }
+    hydrateSpriteImages(playScene);
+    state.world = new Engine.World(playScene, { onLog: (lvl, msg) => log(msg, lvl) });
+    state.world.begin();
+    state.playing = true;
+    document.getElementById("play").classList.add("play");
+    log("Play mode started");
+  } catch (err) { log("Failed to start play mode: " + err.message, "err"); }
+};
+document.getElementById("stop").onclick = () => {
+  if (state.world) state.world.input.dispose();
+  state.playing = false; state.world = null;
+  document.getElementById("play").classList.remove("play");
+  log("Play mode stopped");
+  refresh();
+};
+
+canvas.addEventListener("contextmenu", e => e.preventDefault());
+canvas.addEventListener("wheel", e => { e.preventDefault(); r.zoom = Math.max(0.25, Math.min(4, r.zoom * (e.deltaY > 0 ? 0.9 : 1.1))); });
+canvas.addEventListener("pointerdown", e => {
+  if (state.playing) return;
+  const q = canvas.getBoundingClientRect(), mx = e.clientX - q.left, my = e.clientY - q.top;
+  if (e.button === 2) { state.drag = { pan: true, x: e.clientX, y: e.clientY, cx: state.cam.x, cy: state.cam.y }; return; }
+  let hit = null;
+  for (const en of [...state.editScene.entities].reverse()) {
+    const s = en.get(Engine.SpriteRenderer); if (!s || !s.visible) continue;
+    const p = r.screen(en.transform.position);
+    if (Math.abs(mx - p.x) < s.width * r.zoom / 2 && Math.abs(my - p.y) < s.height * r.zoom / 2) { hit = en; break; }
+  }
+  state.selected = hit;
+  if (hit) state.drag = { entity: hit, x: mx, y: my, pos: { ...hit.transform.position } };
+  refresh();
+});
+canvas.addEventListener("pointermove", e => {
+  if (!state.drag || state.playing) return;
+  if (state.drag.pan) { state.cam.x = state.drag.cx - (e.clientX - state.drag.x) / r.zoom; state.cam.y = state.drag.cy - (e.clientY - state.drag.y) / r.zoom; return; }
+  const q = canvas.getBoundingClientRect(), x = e.clientX - q.left, y = e.clientY - q.top, dx = (x - state.drag.x) / r.zoom, dy = (y - state.drag.y) / r.zoom, en = state.drag.entity;
+  if (state.tool === "select" || state.tool === "move") { let nx = state.drag.pos.x + dx, ny = state.drag.pos.y + dy; if (state.snap) { nx = Math.round(nx / 16) * 16; ny = Math.round(ny / 16) * 16; } en.transform.position = { x: nx, y: ny }; }
+  else if (state.tool === "rotate") en.transform.rotation = Math.atan2(dy, dx);
+  else if (state.tool === "scale") { let k = Math.max(0.1, 1 + dx / 100); en.transform.scale = { x: k, y: k }; }
+});
+addEventListener("pointerup", () => state.drag = null);
+addEventListener("resize", () => r.resize());
+
+function loop(now) {
+  const dt = Math.min(0.1, (now - state.last) / 1000); state.last = now;
+  if (state.playing && state.world) state.world.step(dt);
+  const activeScene = state.playing && state.world ? state.world.scene : state.editScene;
+  r.cam = state.cam; r.grid = state.grid;
+  r.render(activeScene, state.playing ? null : state.selected);
+  document.getElementById("count").textContent = activeScene.entities.length;
+  state.frames++;
+  if (now - state.fpsTime > 500) { document.getElementById("fps").textContent = Math.round(state.frames * 1000 / (now - state.fpsTime)); state.frames = 0; state.fpsTime = now; }
+  requestAnimationFrame(loop);
+}
+r.resize();
+makeDemo("My Lunar Game", "lunarscript");
+requestAnimationFrame(loop);
+</script>
+<script>// Runs only inside the Electron editor window (window.lunarDesktop is injected
+// by preload.js). In a plain browser tab this script no-ops and the editor
+// behaves exactly like the standalone version (download/upload .lunagame files).
+(function () {
+  if (!window.lunarDesktop) return;
+
+  let projectPath = null;
+
+  document.getElementById("new").textContent = "☰ Hub";
+  document.getElementById("new").onclick = () => window.lunarDesktop.focusHub();
+  document.getElementById("load").style.display = "none";
+  document.getElementById("build").textContent = "💾 Export Game";
+
+  window.save = async function () {
+    if (!projectPath) { log("No project file open yet.", "err"); return; }
+    const data = projectData();
+    const res = await window.lunarDesktop.saveProject(projectPath, data, state.projectName, state.projectLanguage);
+    if (res && res.ok) log("Saved " + projectPath);
+    else log("Save failed.", "err");
+  };
+  document.getElementById("save").onclick = save;
+
+  window.buildGamePackage = async function () {
+    log("Exporting standalone game…");
+    const runtime = exportedRuntime();
+    const res = await window.lunarDesktop.exportGame(state.projectName, runtime);
+    if (res && res.ok) log("Exported playable game to " + res.path + " — open it in any browser, or package it with Electron/nexe for a real .exe.");
+    else log("Export canceled.");
+  };
+  document.getElementById("build").onclick = buildGamePackage;
+
+  (async () => {
+    const ctx = await window.lunarDesktop.getContext();
+    projectPath = ctx && ctx.path;
+    if (!projectPath) { log("No project file associated with this window.", "err"); return; }
+    const res = await window.lunarDesktop.loadProject(projectPath);
+    if (res && res.ok) {
+      try { loadProjectData(res.data); log("Opened " + projectPath); }
+      catch (err) { log("Failed to open project: " + err.message, "err"); }
+    } else {
+      log("Could not read project file.", "err");
+    }
+  })();
+})();
+</script>
+</body></html>

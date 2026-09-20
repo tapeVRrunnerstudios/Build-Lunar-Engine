@@ -1,0 +1,39 @@
+{
+  "name": "lunar-engine",
+  "productName": "Lunar Engine",
+  "version": "0.6.0",
+  "description": "A real 2D game engine with LunarScript and Blueprints scripting.",
+  "main": "main.js",
+  "author": "You",
+  "license": "MIT",
+  "private": true,
+  "scripts": {
+    "start": "electron .",
+    "dist": "electron-builder",
+    "dist:win": "electron-builder --win",
+    "dist:mac": "electron-builder --mac",
+    "dist:linux": "electron-builder --linux"
+  },
+  "devDependencies": {
+    "electron": "^31.0.0",
+    "electron-builder": "^24.13.3"
+  },
+  "build": {
+    "appId": "com.lunarengine.editor",
+    "productName": "Lunar Engine",
+    "files": [
+      "main.js",
+      "preload.js",
+      "hub.html",
+      "editor/**/*",
+      "engine/**/*",
+      "shared/**/*",
+      "package.json"
+    ],
+    "directories": { "output": "dist" },
+    "win": { "target": ["nsis"] },
+    "nsis": { "oneClick": false, "allowToChangeInstallationDirectory": true, "createDesktopShortcut": true },
+    "mac": { "target": ["dmg"], "category": "public.app-category.developer-tools" },
+    "linux": { "target": ["AppImage"], "category": "Development" }
+  }
+}
