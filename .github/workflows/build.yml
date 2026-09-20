@@ -1,32 +1,22 @@
-name: Build Lunar Engine Installers
+name: Build Lunar Engine (Windows)
 
-# Run this from the "Actions" tab on GitHub (workflow_dispatch = manual "Run workflow"
-# button), or automatically whenever you push to main. No local Windows/Mac machine
-# needed — GitHub's own Windows/Mac/Linux runners build the real installers for you.
+# Run manually from the "Actions" tab (click "Run workflow"), or automatically
+# on every push to main.
+#
+# This uses electron-packager instead of electron-builder: it just bundles
+# your app with a copy of Electron and hands back a folder containing a real
+# LunarEngine.exe. No installer step, no code-signing checks, no publish
+# step — those were the parts breaking before. You get a portable app folder
+# instead of a one-click installer, which is a fine trade for "give me a
+# working .exe."
 on:
   workflow_dispatch:
   push:
     branches: [main]
 
 jobs:
-  build:
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - os: windows-latest
-            script: dist:win
-            artifact: windows-installer
-            glob: dist/*.exe
-          - os: macos-latest
-            script: dist:mac
-            artifact: mac-installer
-            glob: dist/*.dmg
-          - os: ubuntu-latest
-            script: dist:linux
-            artifact: linux-installer
-            glob: dist/*.AppImage
-    runs-on: ${{ matrix.os }}
+  windows:
+    runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
 
@@ -34,21 +24,12 @@ jobs:
         with:
           node-version: 22
 
-      # AppImage packaging needs libfuse2 to run its build-time tooling.
-      # Recent Ubuntu runner images (22.04+) no longer include it by default.
-      - name: Install libfuse2 (Linux AppImage build dependency)
-        if: matrix.os == 'ubuntu-latest'
-        run: sudo apt-get update && sudo apt-get install -y libfuse2
+      - run: npm install
 
-      - name: Install dependencies
-        run: npm install
+      - run: npm run package:win
 
-      - name: Build installer
-        run: npm run ${{ matrix.script }}
-
-      - name: Upload installer
-        uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.artifact }}
-          path: ${{ matrix.glob }}
+          name: LunarEngine-windows
+          path: dist/LunarEngine-win32-x64/**
           if-no-files-found: error
